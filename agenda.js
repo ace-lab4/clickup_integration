@@ -1,92 +1,87 @@
 const { google } = require('googleapis');
 const { Client } = require('pg');
-const servidor = require('../server/server.js'); 
+const { v4: uuidv4 } = require('uuid');
+const axios = require('axios');
 
-const client = new Client({
+// db config
+const dbConfig = {
   user: 'postgres',
   host: 'localhost',
   database: 'calendar_clickup',
   password: '122113',
   port: 5432,
-});
+};
 
-async function watchEvents(calendarId) {
+// google credentials config
+const googleConfig = {
+  clientId: '998930018535-59frbc5c30bs6pf8h4gkued9m0kkrif4.apps.googleusercontent.com',
+  clientSecret: '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',
+  apiKey: 'AIzaSyD1KXWd0RFfjvadaVmWRXUm6Ae8yU8Lxqg'
+};
+
+async function watchCalendar(client, calendarId, accessToken, refreshToken) {
   try {
-    const credentials = {
-      client_id: '974279755161-1qjf6heheh5ltu25ahlc2ptlt33bqcq2.apps.googleusercontent.com',
-      client_secret: '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',
-    };
+    const oAuth2Client = new google.auth.OAuth2(
+      googleConfig.clientId,
+      googleConfig.clientSecret,
+      'https://dbb3a7466258-10788679143900993082.ngrok-free.app' 
+    );
 
-   // const auth = new google.auth.OAuth2(
-  //  credentials.client_id,
-  //    credentials.client_secret,
-  //   'http://localhost:8000/', 
-  //);
+    oAuth2Client.setCredentials({
+      access_token: accessToken,
+      refresh_token: refreshToken
+    });
 
-    const auth = new google.auth.OAuth2().generateAuthUrl({
-      access_type: 'offline',
-      scope: ['https://www.googleapis.com/auth/calendar.readonly'],
+    const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
 
-    })
-    console.log(auth);
-    const calendar = google.calendar({ version: 'v3', auth });
-}finally {
-  await client.end();
-}
-}
+    const watchResponse = await calendar.events.watch({
+      calendarId: calendarId,
+      requestBody: {
+        id: uuidv4(),
+        type: 'webhook', 
+        address: 'https://dbb3a7466258-10788679143900993082.ngrok-free.app/webhook',
+      }
+    });
 
-watchEvents();
+    console.log('Watch response for calendar', calendarId, ':', watchResponse);
 
-  /*  const watchResponse = await calendar.events.watch({
-    calendarId,
-    resource: {
-      type: 'web_hook',
-      address: 'http://localhost:8000/callback',
-    },
-  }); 
+    const resourceId = watchResponse.data.resourceId;
 
-  console.log('Assinatura criada com sucesso para o calendário', calendarId);
-
-
-   const query = 'SELECT user_id_clickup FROM base WHERE calendar_id = $1';
-   const result = await client.query(query, [calendarId]);
-
-   if (result.rows.length > 0) {
-     const user_id_clickup = result.rows[0].user_id_clickup;
-     console.log('user_id_clickup:', user_id_clickup);
-   }
- } catch (error) {
-   console.error('Erro:', error);
- }
+    const updateQuery = 'UPDATE base SET resource_id = $1 WHERE calendar_id = $2';
+    await client.query(updateQuery, [resourceId, calendarId]);
+  } catch (error) {
+    console.error('Erro ao assistir o calendário:', error);
+  }
 }
 
-async function watchCalendars() {
+async function loopWatch(client) {
   try {
-
-    await client.connect();
-
-    const query = 'SELECT calendar_id FROM base';
+    const query = 'SELECT calendar_id, acess_token, token_refresh FROM base';
     const result = await client.query(query);
 
-    if (result.rowCount === 0) {
-      throw new Error('Nenhum calendário encontrado');
-    }
-
-    // Iterar sobre cada calendário 
     for (const row of result.rows) {
       const calendarId = row.calendar_id;
-      await watchEvents(calendarId);
+      const accessToken = row.acess_token;
+      const refreshToken = row.token_refresh;
+
+      await watchCalendar(client, calendarId, accessToken, refreshToken);
     }
   } catch (error) {
-    console.error('Erro:', error);
+    console.error('Erro no loop de watch:', error);
+  }
+}
+
+async function main() {
+  const client = new Client(dbConfig);
+
+  try {
+    await client.connect();
+    await loopWatch(client);
   } finally {
     await client.end();
   }
 }
 
-
-watchCalendars();
-
-
-
-útil: google.calendar(version:'v3', auth).events.watch() */
+main().catch(error => {
+  console.error('Erro na execução principal:', error);
+});
