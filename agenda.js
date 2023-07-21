@@ -14,8 +14,8 @@ const dbConfig = {
 
 // google credentials config
 const googleConfig = {
-  clientId: '998930018535-59frbc5c30bs6pf8h4gkued9m0kkrif4.apps.googleusercontent.com',
-  clientSecret: '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',
+  clientId: '998930018535-2lh1765ss4lm6204qbnv8tjesr678gba.apps.googleusercontent.com',
+  clientSecret: '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',
   apiKey: 'AIzaSyD1KXWd0RFfjvadaVmWRXUm6Ae8yU8Lxqg'
 };
 
