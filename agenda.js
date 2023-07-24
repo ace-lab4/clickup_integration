@@ -3,7 +3,8 @@ const { Client } = require('pg');
 const { v4: uuidv4 } = require('uuid');
 const axios = require('axios');
 
-// db config
+// db config 
+ //substituir
 const dbConfig = {
   user: 'postgres',
   host: 'localhost',
@@ -14,9 +15,9 @@ const dbConfig = {
 
 // google credentials config
 const googleConfig = {
-  clientId: '998930018535-2lh1765ss4lm6204qbnv8tjesr678gba.apps.googleusercontent.com',
-  clientSecret: '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',
-  apiKey: 'AIzaSyD1KXWd0RFfjvadaVmWRXUm6Ae8yU8Lxqg'
+  clientId: '998930018535-2lh1765ss4lm6204qbnv8tjesr678gba.apps.googleusercontent.com', //substituir
+  clientSecret: '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',  //substituir
+  apiKey: 'AIzaSyD1KXWd0RFfjvadaVmWRXUm6Ae8yU8Lxqg'  //substituir
 };
 
 async function watchCalendar(client, calendarId, accessToken, refreshToken) {
@@ -24,7 +25,7 @@ async function watchCalendar(client, calendarId, accessToken, refreshToken) {
     const oAuth2Client = new google.auth.OAuth2(
       googleConfig.clientId,
       googleConfig.clientSecret,
-      'https://dbb3a7466258-10788679143900993082.ngrok-free.app' 
+      ''  // substituir por url de redirecionamento
     );
 
     oAuth2Client.setCredentials({
@@ -39,7 +40,7 @@ async function watchCalendar(client, calendarId, accessToken, refreshToken) {
       requestBody: {
         id: uuidv4(),
         type: 'webhook', 
-        address: 'https://dbb3a7466258-10788679143900993082.ngrok-free.app/webhook',
+        address: '',
       }
     });
 
@@ -56,12 +57,12 @@ async function watchCalendar(client, calendarId, accessToken, refreshToken) {
 
 async function loopWatch(client) {
   try {
-    const query = 'SELECT calendar_id, acess_token, token_refresh FROM base';
+    const query = 'SELECT calendar_id, access_token, token_refresh FROM base';
     const result = await client.query(query);
 
     for (const row of result.rows) {
       const calendarId = row.calendar_id;
-      const accessToken = row.acess_token;
+      const accessToken = row.access_token;
       const refreshToken = row.token_refresh;
 
       await watchCalendar(client, calendarId, accessToken, refreshToken);
