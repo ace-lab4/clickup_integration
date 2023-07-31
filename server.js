@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const { Pool } = require('pg');
 const axios = require('axios');
 const querystring = require('querystring');
+const moment = require('moment-timezone');
 
 // Configuração do banco de dados PostgreSQL
 const pool = new Pool({
@@ -19,8 +20,8 @@ const app = express();
 app.use(bodyParser.json());
 
 const googleConfig = {
-  clientId: '998930018535-2lh1765ss4lm6204qbnv8tjesr678gba.apps.googleusercontent.com', // substituir
-  clientSecret: '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', // substituir 
+  clientId: '', // substituir
+  clientSecret: '', // substituir 
   redirectUri: '/oauth2callback'// substituir
 };
 
@@ -62,9 +63,9 @@ app.get('/authorize', (req, res) => {
 });
 
 //códigos de acesso clickup
-const clientIDCK = '8J3KDYR653YIZ2EFBGWFRVRWGOXNYS45'; // substituir 
-const clientSecretCK = '3UOTM1H7B2VHMHOJ82625VE6QGQSN0BRVOGCLP11IT38R5Y70KC9ONWHCCYMW2KA'; // substituir
-const redirectURI = `` // substituir
+const clientIDCK = ''; // substituir 
+const clientSecretCK = ''; // substituir
+const redirectURI = `/callback` // substituir
 
 //autorização clickup
 app.get('/clickupAuth', (req, res) => {
@@ -114,7 +115,6 @@ app.post('/webhook', async (req, res) => {
     const tokenClickup = result.rows[0].token_clickup;
     const email = result.rows[0].email;
 
-
     const googleConfig = {
       clientId: '998930018535-2lh1765ss4lm6204qbnv8tjesr678gba.apps.googleusercontent.com', // substituir
       clientSecret: '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', // substituir
@@ -150,6 +150,7 @@ app.post('/webhook', async (req, res) => {
 });
 
 const processingTasksMap = new Map();
+const activeRequests = new Set();
 
 // função de processo de notificação e extração de dados para tarefa
 async function processEvents(events, user_id_clickup, tokenClickup, email) {
@@ -159,46 +160,93 @@ async function processEvents(events, user_id_clickup, tokenClickup, email) {
     const eventName = titleParts[0];
     const spaceName = titleParts[1];
     const projectId = titleParts[2];
+    const listCustom = titleParts[3];
     const created = event.created;
     const status = event.status;
     const updated = event.updated;
     const guests = event.attendees ? event.attendees.filter(guest => guest.email.endsWith('goace.vc')) : [];
+    const guestEmails = guests.map(guest => guest.email);
     const hasGoaceVcGuests = guests.length > 0;
     const dueDateTime = event.end.dateTime;
     const startDateTime = event.start.dateTime;
     const dueDate = event.end.date;
     const startDate = event.start.date;
     const recurringEventId  = event.recurringEventId;
-    
+    const declinedGuests = event.attendees ? event.attendees.filter(attendee => attendee.responseStatus === 'declined') : [];    const startDateTimeBrasilia = moment(event.start.dateTime).tz('America/Sao_Paulo');
+    const dueDateTimeBrasilia = moment(event.end.dateTime).tz('America/Sao_Paulo');
+    const timeDifferenceInMilliseconds = dueDateTimeBrasilia.diff(startDateTimeBrasilia, 'milliseconds');
+    const timeEstimateInt32 = Math.min(timeDifferenceInMilliseconds, 2147483647);
 
     const eventData = {
       folderName: projectId,
       spaceName: spaceName,
       eventId: eventId,
+      listCustom:listCustom,
       recurringEventId: recurringEventId,
       name: eventName,
       hasGoaceVcGuests: hasGoaceVcGuests,
-      user_id_clickup: user_id_clickup,
+      eventOwnerClickupId: user_id_clickup,
+      attendeesClickupIds: [],
       attendees: (event.attendees || event.attendee || []).map(attendee => ({ email: attendee.email })),
+      declinedAttendees: [],
       dueDateTime: dueDateTime,
       startDateTime: startDateTime,
+      timeEstimate: timeEstimateInt32,
       dueDate: dueDate,
       startDate: startDate,
       tokenClickup: tokenClickup,
       email: email,
     };
+    console.log('time:', timeEstimateInt32)
+    console.log(declinedGuests);
 
+    // buscar clickup Id 
     try {
-      const userClickUpId = await getUserIdFromClickUp(email, tokenClickup);
-      eventData.user_id_clickup = userClickUpId; 
-  
-      const updateQuery = 'UPDATE base SET user_id_clickup = $1 WHERE email = $2';
-      const updateValues = [userClickUpId, email];
-      await pool.query(updateQuery, updateValues);
-  
+      if (!activeRequests.has(email)) {
+        activeRequests.add(email);
+
+        const ownerResult = await pool.query('SELECT user_id_clickup FROM base WHERE email = $1', [email]);
+        if (ownerResult.rows.length > 0 && ownerResult.rows[0].user_id_clickup) {
+          eventData.eventOwnerClickupId = ownerResult.rows[0].user_id_clickup;
+        } else {
+          const ownerClickUpId = await getOwnerIdFromClickUp(email, tokenClickup);
+          eventData.eventOwnerClickupId = ownerClickUpId;
+
+          const updateQuery = 'UPDATE base SET user_id_clickup = $1 WHERE email = $2';
+          const updateValues = [ownerClickUpId, email];
+          await pool.query(updateQuery, updateValues);
+        }
+
+        const guests = eventData.attendees
+        ? eventData.attendees.filter(guest => guest.email.endsWith('goace.vc'))
+        : [];
+      
+        if (guests.length > 0) {
+          const emails = guests.map(guest => guest.email);
+          const guestIds = await getGuestIdsFromClickUp(emails);
+          await saveGuestsToDatabase(guestIds);
+          console.log('ID recuperados:', guestIds);
+          eventData.attendeesClickupIds = guestIds.map(guest => guest.id);
+          console.log('attendeesClickupIds:', eventData.attendeesClickupIds);
+        } 
+        if (declinedGuests.length > 0) {
+          const declinedGuestIdsToRemove = [];
+          for (const declinedGuest of declinedGuests) {
+            const declinedEmail = declinedGuest.email;
+            const result = await pool.query('SELECT id_clickup FROM guests WHERE email = $1', [declinedEmail]);
+            
+            if (result.rows.length > 0) {
+              const guestIdToRemove = result.rows[0].id_clickup;
+              declinedGuestIdsToRemove.push(guestIdToRemove);
+              console.log(`declinedes to remove ${eventId}:`,declinedGuestIdsToRemove)
+            }
+          }
+          eventData.declinedAttendees = declinedGuestIdsToRemove;
+        }
+        activeRequests.delete(email);
+      }
     } catch (error) {
-      console.error(`Error getting user id from ClickUp for email "${email}": ${error.message}`);
-      return;
+      console.error(`Error processing event with email "${email}": ${error.message}`);
     }
 
     if (recurringEventId) {
@@ -208,34 +256,325 @@ async function processEvents(events, user_id_clickup, tokenClickup, email) {
     
     const eventExists = await checkEventExistence(eventId);
     const existingTask = await checkTaskExistence(eventId);
-
+    
     if (!eventExists) {
       await saveEvent(eventId, created, status, updated);
       console.log('Evento salvo:', eventId, created, status, updated);
     } else {
-      console.log('Evento já existe,buscando atualização: ', eventId);
+      console.log('Evento já existe, buscando atualização:', eventId);
       await checkEventChanges(eventId, updated);
       await updateTaskClickup(existingTask, eventData);
-
-      if (!processingTasksMap.has(eventId)) {
-        processingTasksMap.set(eventId, true);
-
-        const existingTaskId = await checkTaskExistence(eventId);
-
-        if (existingTaskId) {
-          console.log(`Tarefa já criada para o evento ${eventId}.`);
+    }
+    
+    if (!processingTasksMap.has(eventId)) {
+      processingTasksMap.set(eventId, true);
+    
+      const existingTaskId = await checkTaskExistence(eventId);
+    
+      if (existingTaskId) {
+        console.log(`Tarefa já criada para o evento ${eventId}.`);
+      } else {
+        const createdTaskId = await createTaskClickup(eventData);
+        // Atribuir tarefa a convidados do espaço
+        // await addGuestToTask(createdTaskId, 'notify_all=false', tokenClickup);
+        if (createdTaskId) {
+          await updateEventWithTaskId(eventId, createdTaskId);
+          console.log(`Tarefa criada para o evento ${eventId}: ${createdTaskId}`);
         } else {
-          const createdTaskId = await createTaskClickup(eventData);
-          if (createdTaskId) {
-            await updateEventWithTaskId(eventId, createdTaskId);
-            console.log(`Tarefa criada para o evento ${eventId}: ${createdTaskId}`);
-          } else {
-            console.log(`Tarefa não encontrada para o evento ${eventId}.`);
-          }
-        processingTasksMap.delete(eventId);
+          console.log(`Tarefa não encontrada para o evento ${eventId}.`);
         }
+        if (!existingTaskId) {
+          console.log(`Tarefa criada para o evento ${eventId}: ${createdTaskId}`);
+        }
+        processingTasksMap.delete(eventId);
       }
     }
+  }
+}
+
+
+async function createTaskClickup(eventData) {
+  const { folderName, spaceName, eventId, hasGoaceVcGuests, eventOwnerClickupId,
+  attendeesClickupIds, name, recurringEventId, tokenClickup, attendees, listCustom, timeEstimate, dueDate, startDate } = eventData;
+
+  const isAllDayEvent = !eventData.dueDateTime && !eventData.startDateTime;
+
+  const startDateInt64 = isAllDayEvent
+    ? convertDateTimeEventToInt64(dueDate)
+    : convertDateTimeEventToInt64(eventData.startDateTime || startDate);
+
+  const dueDateTimeInt64 = isAllDayEvent
+    ? convertDateTimeEventToInt64(dueDate)
+    : convertDateTimeEventToInt64(eventData.dueDateTime || dueDate);
+
+  const timeEstimateInt32 = isAllDayEvent ? 8 * 3600000 : timeEstimate;
+  
+  if (recurringEventId) {
+    console.log(`Evento é recorrente (recurringEventId: ${recurringEventId}), não será criada nenhuma tarefa.`);
+    return null;
+  }
+
+  try {
+
+    const spaceId = await getSpaceIdFromTeam(spaceName,tokenClickup);
+
+    const folderId = await getFolderIdFromName(spaceId, folderName,tokenClickup);
+
+    const listId = await getListIdFromFolder(folderId, folderName, tokenClickup, listCustom);
+
+    const query = 'SELECT id_task FROM eventos WHERE id_evento = $1';
+    const values = [eventId];
+    const result = await pool.query(query, values);
+    const existingTaskId = result.rows[0].id_task;
+
+    if (existingTaskId) {
+      console.log(`Tarefa já criada para o evento ${eventId}.`);
+      return existingTaskId;
+    }
+
+    const assignees = [eventOwnerClickupId];
+
+    if (attendeesClickupIds && attendeesClickupIds.length > 0) {
+      assignees.push(...attendeesClickupIds); 
+    }
+
+    console.log('convidados:', assignees);
+    
+    
+    const resp = await fetch(
+      `https://api.clickup.com/api/v2/list/${listId}/task`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${tokenClickup}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: name,
+          status: 'In progress',
+          assignees: assignees,
+          start_date_time: false,
+          due_date_time: false,
+          start_date: startDateInt64 ,
+          due_date: dueDateTimeInt64 ,
+          time_estimate: timeEstimateInt32,
+        }),
+      }
+    );
+
+    const data = await resp.json();
+    const createdTaskId = data.id;
+    return createdTaskId;
+
+  } catch (error) {
+    console.error(`Erro ao criar a tarefa para o evento ${eventId}: ${error.message}`);
+    return null;
+  }
+}
+
+// atualização de tarefas no clickup
+async function updateTaskClickup(taskId, eventData) {
+  const {hasGoaceVcGuests,eventOwnerClickupId, attendeesClickupIds, name, recurringEventId, tokenClickup, declinedAttendees, timeEstimate } = eventData;
+
+  const isAllDayEvent = !eventData.dueDateTime && !eventData.startDateTime;
+
+  const startDateInt64 = isAllDayEvent
+    ? convertDateTimeEventToInt64(dueDate)
+    : convertDateTimeEventToInt64(eventData.startDateTime || startDate);
+
+  const dueDateTimeInt64 = isAllDayEvent
+    ? convertDateTimeEventToInt64(dueDate)
+    : convertDateTimeEventToInt64(eventData.dueDateTime || dueDate);
+
+  const timeEstimateInt32 = isAllDayEvent ? 8 * 3600000 : timeEstimate;
+
+  if (recurringEventId) {
+    console.log(`Evento é recorrente (recurringEventId: ${recurringEventId}), não será criada nenhuma tarefa.`);
+    return null;
+  }
+
+  try {
+
+    const Newassignees = [eventOwnerClickupId]; 
+
+    if (hasGoaceVcGuests) {
+      Newassignees.push(...attendeesClickupIds);
+    }
+
+    console.log(`Assignees for ${taskId}:`, Newassignees);
+
+    const resp = await fetch(
+      `https://api.clickup.com/api/v2/task/${taskId}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${tokenClickup}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: name,
+          assignees: {
+            add: Newassignees,
+            rem:declinedAttendees,
+          },
+          start_date_time: false,
+          due_date_time: false,
+          start_date: startDateInt64,
+          due_date: dueDateTimeInt64,
+          time_estimate: timeEstimateInt32,
+        }),
+      }
+    );
+
+    if (resp.ok) {
+      console.log(`Tarefa atualizada com sucesso: ${taskId}`);
+    } else {
+      const errorMessage = await resp.text();
+      console.error(`Erro ao atualizar tarefa ${taskId}: ${errorMessage}`);
+    }
+  } catch (error) {
+    console.error(`Erro ao atualizar tarefa ${taskId}: ${error.message}`);
+  }
+}
+
+// Função para buscar o id_clickup do convidado com base no email
+async function getGuestIdsFromClickUp(emails, eventData) {
+  const {guestsIDs} = eventData
+  try {
+    const emailList = Array.isArray(emails) ? emails : [emails];
+    const userIds = [];
+    const guestsWithRole4 = [];
+
+    // Buscar informações da equipe (team) do ClickUp
+    const respTeam = await fetch(
+      `https://api.clickup.com/api/v2/team`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': 'CHAVE API',
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!respTeam.ok) {
+      console.error(`Error fetching team information from ClickUp: ${await respTeam.text()}`);
+      return [];
+    }
+
+    const teamData = await respTeam.json();
+    const membersData = teamData.teams[0].members;
+
+    const emailToUserIdMap = new Map();
+
+    for (const memberObj of membersData) {
+      const member = memberObj.user;
+      if (member.email) {
+        emailToUserIdMap.set(member.email, member.id);
+      }
+      if (member.role === 4) {
+        guestsWithRole4.push({ email: member.email, id: member.id });
+      }
+
+    }
+
+    // Buscar o id_clickup do convidado para cada email na lista
+    for (const email of emailList) {
+      const userId = emailToUserIdMap.get(email);
+      if (userId) {
+        userIds.push({ email, id: userId });
+        console.log('Convidado id:', userIds);
+        return userIds;
+      } else {
+        console.warn(`User with email "${email}" not found in ClickUp.`);
+      }
+    }
+
+    console.log('Guests with role 4:', guestsWithRole4);
+    return guestsWithRole4;
+  } catch (error) {
+    console.error(`Error getting guest ids from ClickUp: ${error.message}`);
+    throw error;
+  }
+}
+
+
+async function getOwnerIdFromClickUp(email, tokenClickup) {
+  try {
+    const resp = await fetch(
+      `https://api.clickup.com/api/v2/user?email=${encodeURIComponent(email)}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${tokenClickup}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data && data.user && data.user.id) {
+        return data.user.id;
+      } else {
+        throw new Error(`User with email "${email}" not found in ClickUp.`);
+      }
+    } else {
+      throw new Error(`Error fetching user from ClickUp with email "${email}": ${await resp.text()}`);
+    }
+  } catch (error) {
+    console.error(`Error getting owner id from ClickUp for email "${email}": ${error.message}`);
+    throw error;
+  }
+}
+// Atribuir tarefa a convidados do espaço
+ /* async function addGuestToTask(createdTaskId, query, tokenClickup) {
+  const guestsWithRole4 = await getGuestIdsFromClickUp(emails);
+
+ try {
+    for (const guest of guestsWithRole4) {
+    const guestID = guest.id;     
+
+    const resp = await fetch(
+      `https://api.clickup.com/api/v2/task/${createdTaskId}/guest/${guestID}?${query}`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${tokenClickup}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!resp.ok) {
+      console.error(`Error adding guest ${guestId} to task ${createdTaskId}: ${await resp.text()}`);
+    } else {
+      console.log(`Guest ${guestId} added to task ${createdTaskId}.`);
+    }
+  }
+  } catch (error) {
+    console.error(`Error adding guest ${guestId} to task ${createdTaskId}: ${error.message}`);
+  }
+}*/
+
+// Salva os emails e seus respectivos userIds na tabela guests
+async function saveGuestsToDatabase(userIds) {
+  try {
+    const insertQuery = 'INSERT INTO guests (email, id_clickup) VALUES ($1, $2)';
+    const selectQuery = 'SELECT * FROM guests WHERE email = $1 AND id_clickup = $2';
+
+    for (const user of userIds) {
+      const { email, id } = user;
+
+      const existingGuest = await pool.query(selectQuery, [email, id]);
+
+      if (existingGuest.rows.length === 0) {
+        await pool.query(insertQuery, [email, id]);
+      }
+    }
+  } catch (error) {
+    console.error(`Error saving guests to database: ${error.message}`);
+    throw error;
   }
 }
 
@@ -296,83 +635,10 @@ function convertDateTimeEventToInt64(date) {
   return int64Date;
 }
 
-//criação de da tarefa no clickup
-async function createTaskClickup(eventData) {
-  const { folderName, spaceName, eventId, hasGoaceVcGuests, user_id_clickup, name, recurringEventId, tokenClickup} = eventData;
-  
-  const isAllDayEvent = !eventData.dueDateTime && !eventData.startDateTime;
-
-  const dueDateTimeInt64 = isAllDayEvent ? convertDateTimeEventToInt64(eventData.dueDate) : convertDateTimeEventToInt64(eventData.dueDateTime || eventData.dueDate);
-  const startDateTimeInt64 = isAllDayEvent ? convertDateTimeEventToInt64(eventData.startDate) : convertDateTimeEventToInt64(eventData.startDateTime || eventData.startDate);
- 
-  if (recurringEventId) {
-    console.log(`Evento é recorrente (recurringEventId: ${recurringEventId}), não será criada nenhuma tarefa.`);
-    return null;
-  }
-
-  try {
-
-    const spaceId = await getSpaceIdFromTeam(spaceName,tokenClickup);
-
-    const folderId = await getFolderIdFromName(spaceId, folderName,tokenClickup);
-
-    const listId = await getListIdFromFolder(folderId, folderName, tokenClickup);
-
-    const query = 'SELECT id_task FROM eventos WHERE id_evento = $1';
-    const values = [eventId];
-    const result = await pool.query(query, values);
-    const existingTaskId = result.rows[0].id_task;
-
-    if (existingTaskId) {
-      console.log(`Tarefa já criada para o evento ${eventId}.`);
-      return existingTaskId;
-    }
-
-    const assignees = [user_id_clickup];
-
-    if (hasGoaceVcGuests) {
-      const goaceVcGuests = eventData.attendees.filter(guest => guest.email.endsWith('goace.vc'));
-      const goaceVcUserIds = await Promise.all(goaceVcGuests.map(async guest => {
-        const goaceVcEmail = guest.email;
-        return await findUserIdByGoaceEmail(goaceVcEmail);
-      }));
-      assignees.push(...goaceVcUserIds.filter(id => id !== null));
-    }
-
-    const resp = await fetch(
-      `https://api.clickup.com/api/v2/list/${listId}/task`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${tokenClickup}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: name,
-          status: 'In progress',
-          assignees: assignees,
-          start_date_time: false,
-          due_date_time: false,
-          start_date: startDateTimeInt64 ,
-          due_date: dueDateTimeInt64 ,
-        }),
-      }
-    );
-
-    const data = await resp.json();
-    const createdTaskId = data.id;
-    return createdTaskId;
-
-  } catch (error) {
-    console.error(`Erro ao criar a tarefa para o evento ${eventId}: ${error.message}`);
-    return null;
-  }
-}
-
 async function getSpaceIdFromTeam(spaceName, tokenClickup) {
   try {
     // team id ace: 
-    const teamId = '12926935';
+    const teamId = '9010135082';
 
     const resp = await fetch(
       `https://api.clickup.com/api/v2/team/${teamId}/space`,
@@ -387,7 +653,7 @@ async function getSpaceIdFromTeam(spaceName, tokenClickup) {
 
     if (resp.ok) {
       const data = await resp.json();
-      const space = data.spaces.find(space => space.name.trim() === spaceName.trim());
+      const space = data.spaces.find(space => space.name.trim().toLowerCase() === spaceName.trim().toLowerCase());
       if (space) {
         return space.id;
       } else {
@@ -427,7 +693,7 @@ async function getFolderIdFromName(spaceId, folderName, tokenClickup) {
           throw new Error(`Folder with name "${folderName}" not found in space with ID "${spaceId}".`);
         }
       } else {
-        const folder = data.folders.find(folder => folder.name === folderName);
+        const folder = data.folders.find(folder => folder.name.trim().toLowerCase() === folderName.trim().toLowerCase());
         if (folder) {
           folderId = folder.id;
         } else {
@@ -445,15 +711,21 @@ async function getFolderIdFromName(spaceId, folderName, tokenClickup) {
 }
 
 
-async function getListIdFromFolder(folderId, folderName, tokenClickup) {
-  const listName = /\d/.test(folderName) ? 'cronograma' : 'calendario';
-  console.log('token de acesso', tokenClickup)
-  return await getListIdFromName(folderId, listName.toLowerCase(), tokenClickup);
+async function getListIdFromFolder(folderId, folderName, tokenClickup, listCustom) {
+  const defaultListName = /\d/.test(folderName) ? 'cronograma' : 'calendario';
+  
+  const listNameToSearch = listCustom && listCustom.trim() ? listCustom.toLowerCase() : defaultListName;
+  
+  console.log('token de acesso', tokenClickup);
+  return await getListIdFromName(folderId, listNameToSearch, tokenClickup);
 }
 
-
-async function getListIdFromName(folderId, listName, tokenClickup) {
+async function getListIdFromName(folderId, listNameToSearch, tokenClickup) {
   try {
+    if (!listNameToSearch) {
+      throw new Error('List name to search is missing or null.');
+    }
+
     const resp = await fetch(
       `https://api.clickup.com/api/v2/folder/${folderId}/list`,
       {
@@ -467,108 +739,25 @@ async function getListIdFromName(folderId, listName, tokenClickup) {
 
     if (resp.ok) {
       const data = await resp.json();
-      const list = data.lists.find(list => list.name.toLowerCase() === listName);
+      
+      const list = data.lists.find(list => list.name.trim().toLowerCase() === listNameToSearch.trim().toLowerCase());
+      
       if (list) {
         return list.id;
       } else {
-        throw new Error(`List with name "${listName}" not found in folder with ID "${folderId}".`);
+        throw new Error(`List with name "${listNameToSearch}" not found in folder with ID "${folderId}".`);
       }
     } else {
       throw new Error(`Error fetching lists from folder with ID "${folderId}": ${await resp.text()}`);
     }
   } catch (error) {
-    console.log('token:', tokenClickup)
-    console.error(`Error getting listId from name for folderId "${folderId}" and listName "${listName}": ${error.message}`);
+    console.log('token:', tokenClickup);
+    console.error(`Error getting listId from name for folderId "${folderId}" and listName "${listNameToSearch}": ${error.message}`);
     throw error;
   }
 }
 
 
-// atualização de tarefas no clickup
-async function updateTaskClickup(taskId, eventData) {
-  const {hasGoaceVcGuests, user_id_clickup, name, recurringEventId, tokenClickup } = eventData;
-
-  const isAllDayEvent = !eventData.dueDateTime && !eventData.startDateTime;
-
-  const dueDateTimeInt64 = isAllDayEvent ? convertDateTimeEventToInt64(eventData.dueDate) : convertDateTimeEventToInt64(eventData.dueDateTime || eventData.dueDate);
-  const startDateTimeInt64 = isAllDayEvent ? convertDateTimeEventToInt64(eventData.startDate) : convertDateTimeEventToInt64(eventData.startDateTime || eventData.startDate);
-  
-  if (recurringEventId) {
-    console.log(`Evento é recorrente (recurringEventId: ${recurringEventId}), não será criada nenhuma tarefa.`);
-    return null;
-  }
-
-  try {
-    const assignees = [user_id_clickup];
-
-    if (hasGoaceVcGuests) {
-      const goaceVcGuests = eventData.attendees.filter(guest => guest.email.endsWith('goace.vc'));
-      const goaceVcUserIds = await Promise.all(goaceVcGuests.map(async guest => {
-        const goaceVcEmail = guest.email;
-        return await findUserIdByGoaceEmail(goaceVcEmail);
-      }));
-      assignees.push(...goaceVcUserIds.filter(id => id !== null));
-    }
-
-    const resp = await fetch(
-      `https://api.clickup.com/api/v2/task/${taskId}`,
-      {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${tokenClickup}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: name,
-          assignees: assignees,
-          start_date_time: false,
-          due_date_time: false,
-          start_date: startDateTimeInt64,
-          due_date: dueDateTimeInt64,
-        }),
-      }
-    );
-
-    if (resp.ok) {
-      console.log(`Tarefa atualizada com sucesso: ${taskId}`);
-    } else {
-      const errorMessage = await resp.text();
-      console.error(`Erro ao atualizar tarefa ${taskId}: ${errorMessage}`);
-    }
-  } catch (error) {
-    console.error(`Erro ao atualizar tarefa ${taskId}: ${error.message}`);
-  }
-}
-
-// Busca de user id por email
-async function getUserIdFromClickUp(email, tokenClickup) {
-  try {
-    const resp = await fetch(
-      `https://api.clickup.com/api/v2/user?email=${encodeURIComponent(email)}`,
-      {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${tokenClickup}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    if (resp.ok) {
-      const data = await resp.json();
-      if (data && data.user && data.user.id) {
-        return data.user.id;
-      } else {
-        throw new Error(`User with email "${email}" not found in ClickUp.`);
-      }
-    } else {
-      throw new Error(`Error fetching user from ClickUp with email "${email}": ${await resp.text()}`);
-    }
-  } catch (error) {
-    console.error(`Error getting user id from ClickUp for email "${email}": ${error.message}`);
-    throw error;
-  }
-}
 
 
 
