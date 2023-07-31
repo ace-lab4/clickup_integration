@@ -17,3 +17,10 @@ CREATE TABLE eventos (
     status VARCHAR(255),
     updated VARCHAR(255),
 );
+
+CREATE TABLE guests (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(250),
+	id_clickup VARCHAR(250),
+    role INT(50) , /* necessario futuramente */
+);
