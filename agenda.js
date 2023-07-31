@@ -2,6 +2,8 @@ const { google } = require('googleapis');
 const { Client } = require('pg');
 const { v4: uuidv4 } = require('uuid');
 const axios = require('axios');
+const dotenv = require('dotenv');
+dotenv.config();
 
 // db config 
  //substituir
@@ -15,9 +17,9 @@ const dbConfig = {
 
 // google credentials config
 const googleConfig = {
-  clientId: '998930018535-2lh1765ss4lm6204qbnv8tjesr678gba.apps.googleusercontent.com', //substituir
-  clientSecret: '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',  //substituir
-  apiKey: 'AIzaSyD1KXWd0RFfjvadaVmWRXUm6Ae8yU8Lxqg'  //substituir
+  clientId: process.env.GOOGLE_CLIENT_ID, 
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET, 
+  apiKey: process.env.GOOGLE_API_KEY,
 };
 
 async function watchCalendar(client, calendarId, accessToken, refreshToken) {
@@ -40,7 +42,7 @@ async function watchCalendar(client, calendarId, accessToken, refreshToken) {
       requestBody: {
         id: uuidv4(),
         type: 'webhook', 
-        address: '',
+        address: '/webhook',
       }
     });
 
