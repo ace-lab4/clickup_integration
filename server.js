@@ -5,6 +5,8 @@ const { Pool } = require('pg');
 const axios = require('axios');
 const querystring = require('querystring');
 const moment = require('moment-timezone');
+const dotenv = require('dotenv');
+dotenv.config();
 
 // Configuração do banco de dados PostgreSQL
 const pool = new Pool({
@@ -20,8 +22,8 @@ const app = express();
 app.use(bodyParser.json());
 
 const googleConfig = {
-  clientId: '', // substituir
-  clientSecret: '', // substituir 
+  clientId: process.env.GOOGLE_CLIENT_ID, 
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,  
   redirectUri: '/oauth2callback'// substituir
 };
 
@@ -63,8 +65,8 @@ app.get('/authorize', (req, res) => {
 });
 
 //códigos de acesso clickup
-const clientIDCK = ''; // substituir 
-const clientSecretCK = ''; // substituir
+const clientIDCK = process.env.CLIENT_ID_CK;  
+const clientSecretCK = process.env.CLIENT_SECRET_CK; 
 const redirectURI = `/callback` // substituir
 
 //autorização clickup
@@ -116,9 +118,9 @@ app.post('/webhook', async (req, res) => {
     const email = result.rows[0].email;
 
     const googleConfig = {
-      clientId: '998930018535-2lh1765ss4lm6204qbnv8tjesr678gba.apps.googleusercontent.com', // substituir
-      clientSecret: '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', // substituir
-      apiKey: 'AIzaSyD1KXWd0RFfjvadaVmWRXUm6Ae8yU8Lxqg' // substituir
+      clientId: process.env.GOOGLE_CLIENT_ID, 
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET, 
+      apiKey: process.env.GOOGLE_API_KEY,
     };
 
     const oAuth2Client = new google.auth.OAuth2(
@@ -439,7 +441,6 @@ async function updateTaskClickup(taskId, eventData) {
 
 // Função para buscar o id_clickup do convidado com base no email
 async function getGuestIdsFromClickUp(emails, eventData) {
-  const {guestsIDs} = eventData
   try {
     const emailList = Array.isArray(emails) ? emails : [emails];
     const userIds = [];
@@ -451,7 +452,7 @@ async function getGuestIdsFromClickUp(emails, eventData) {
       {
         method: 'GET',
         headers: {
-          'Authorization': 'CHAVE API',
+          'Authorization': '18926083_add53b40790275ba0e3ea1ac9ae9f250a6f07695',
           'Content-Type': 'application/json',
         },
       }
@@ -638,7 +639,7 @@ function convertDateTimeEventToInt64(date) {
 async function getSpaceIdFromTeam(spaceName, tokenClickup) {
   try {
     // team id ace: 
-    const teamId = '9010135082';
+    const teamId = '12926935';
 
     const resp = await fetch(
       `https://api.clickup.com/api/v2/team/${teamId}/space`,
@@ -714,11 +715,14 @@ async function getFolderIdFromName(spaceId, folderName, tokenClickup) {
 async function getListIdFromFolder(folderId, folderName, tokenClickup, listCustom) {
   const defaultListName = /\d/.test(folderName) ? 'cronograma' : 'calendario';
   
+  // If listCustom is not provided or empty, use the default list name
   const listNameToSearch = listCustom && listCustom.trim() ? listCustom.toLowerCase() : defaultListName;
   
   console.log('token de acesso', tokenClickup);
   return await getListIdFromName(folderId, listNameToSearch, tokenClickup);
 }
+
+
 
 async function getListIdFromName(folderId, listNameToSearch, tokenClickup) {
   try {
@@ -740,6 +744,7 @@ async function getListIdFromName(folderId, listNameToSearch, tokenClickup) {
     if (resp.ok) {
       const data = await resp.json();
       
+      // Find the list using a case-insensitive and whitespace-trimmed comparison
       const list = data.lists.find(list => list.name.trim().toLowerCase() === listNameToSearch.trim().toLowerCase());
       
       if (list) {
