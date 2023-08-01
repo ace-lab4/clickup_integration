@@ -7,8 +7,8 @@ const axios = require('axios');
 const dbConfig = {
   user: 'postgres',
   host: 'localhost',
-  database: 'calendar_clickup',
-  password: '122113',
+  database: 'postgres',
+  password: '@Cortex@2023',
   port: 5432,
 };
 
