@@ -371,7 +371,9 @@ async function createTaskClickup(eventData) {
     );
 
     const data = await resp.json();
+    console.log('API Response Data:', data); // Add this line to check the entire response data
     const createdTaskId = data.id;
+    console.log('Created Task ID:', createdTaskId); 
     return createdTaskId;
 
   } catch (error) {
