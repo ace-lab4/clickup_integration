@@ -11,9 +11,9 @@ dotenv.config();
 // Configuração do banco de dados PostgreSQL
 const pool = new Pool({
   user: 'postgres',
-  host: 'localhost',
-  database: 'calendar_clickup',
-  password: '122113',
+  host: '142.93.62.43',
+  database: 'postgres',
+  password: '@Cortex@2023',
   port: 5432,
 });
 
@@ -24,7 +24,7 @@ app.use(bodyParser.json());
 const googleConfig = {
   clientId: process.env.GOOGLE_CLIENT_ID, 
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,  
-  redirectUri: '/oauth2callback'// substituir
+  redirectUri: 'https://integracao-cc.onrender.com/oauth2callback'// substituir
 };
 
 const oAuth2Client = new google.auth.OAuth2(
@@ -67,7 +67,7 @@ app.get('/authorize', (req, res) => {
 //códigos de acesso clickup
 const clientIDCK = process.env.CLIENT_ID_CK;  
 const clientSecretCK = process.env.CLIENT_SECRET_CK; 
-const redirectURI = `/callback` // substituir
+const redirectURI = `https://integracao-cc.onrender.com/callback` // substituir
 
 //autorização clickup
 app.get('/clickupAuth', (req, res) => {
@@ -348,7 +348,7 @@ async function createTaskClickup(eventData) {
       {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${tokenClickup}`,
+          'Authorization': `18926083_add53b40790275ba0e3ea1ac9ae9f250a6f07695`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -410,7 +410,7 @@ async function updateTaskClickup(taskId, eventData) {
       {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${tokenClickup}`,
+          'Authorization': `18926083_add53b40790275ba0e3ea1ac9ae9f250a6f07695`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -507,7 +507,7 @@ async function getOwnerIdFromClickUp(email, tokenClickup) {
       {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${tokenClickup}`,
+          'Authorization':'18926083_add53b40790275ba0e3ea1ac9ae9f250a6f07695',
           'Content-Type': 'application/json',
         },
       }
@@ -646,7 +646,7 @@ async function getSpaceIdFromTeam(spaceName, tokenClickup) {
       {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${tokenClickup}`,
+          'Authorization': '18926083_add53b40790275ba0e3ea1ac9ae9f250a6f07695',
           'Content-Type': 'application/json',
         },
       }
@@ -676,7 +676,7 @@ async function getFolderIdFromName(spaceId, folderName, tokenClickup) {
       {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${tokenClickup}`,
+          'Authorization': '18926083_add53b40790275ba0e3ea1ac9ae9f250a6f07695',
           'Content-Type': 'application/json',
         },
       }
@@ -735,7 +735,7 @@ async function getListIdFromName(folderId, listNameToSearch, tokenClickup) {
       {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${tokenClickup}`,
+          'Authorization': '18926083_add53b40790275ba0e3ea1ac9ae9f250a6f07695',
           'Content-Type': 'application/json',
         },
       }
@@ -792,9 +792,8 @@ async function checkTaskExistence(eventId) {
 }
 
 
-const port = 8000;
 app.listen(port, () => {
-  console.log(`Servidor iniciado em http://localhost:${port}`);
+  console.log(`Servidor iniciado em https://integracao-cc.onrender.com`);
 });
 
 
