@@ -272,29 +272,34 @@ async function processEvents(events, user_id_clickup, tokenClickup, email) {
     if (!processingTasksMap.has(eventId)) {
       processingTasksMap.set(eventId, true);
     
-      const existingTaskId = await checkTaskExistence(eventId);
+      try {
+        const existingTaskId = await checkTaskExistence(eventId);
     
-      if (existingTaskId) {
-        console.log(`Tarefa já criada para o evento ${eventId}.`);
-      } else {
-        const createdTaskId = await createTaskClickup(eventData);
-        // Atribuir tarefa a convidados do espaço
-        // await addGuestToTask(createdTaskId, 'notify_all=false', tokenClickup);
-        if (createdTaskId) {
-          await updateEventWithTaskId(eventId, createdTaskId);
-          console.log(`Tarefa criada para o evento ${eventId}: ${createdTaskId}`);
+        if (existingTaskId) {
+          console.log(`Tarefa já criada para o evento ${eventId}.`);
         } else {
-          console.log(`Tarefa não encontrada para o evento ${eventId}.`);
-        }
-        if (!existingTaskId) {
+          const createdTaskId = await createTaskClickup(eventData);
+          // Atribuir tarefa a convidados do espaço
+          // await addGuestToTask(createdTaskId, 'notify_all=false', tokenClickup);
           console.log(`Tarefa criada para o evento ${eventId}: ${createdTaskId}`);
+          if (createdTaskId) {
+            await updateEventWithTaskId(eventId, createdTaskId);
+            console.log(`Tarefa atualizada para o evento ${eventId}: ${createdTaskId}`);
+          } if (!createdTaskId){
+          await createTaskClickup(eventData);
+          console.log(`Tarefa criada para o evento ${eventId}: ${createdTaskId}`);
+          }else {
+            console.log(`Tarefa não encontrada para o evento ${eventId}.`);
+          }
         }
+      } catch (error) {
+        console.error(`Ocorreu um erro ao executar a tarefa: ${error}`);
+      } finally {
         processingTasksMap.delete(eventId);
       }
     }
   }
 }
-
 
 async function createTaskClickup(eventData) {
   const { folderName, spaceName, eventId, hasGoaceVcGuests, eventOwnerClickupId,
