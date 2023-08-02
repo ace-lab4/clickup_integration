@@ -642,7 +642,7 @@ async function getSpaceIdFromTeam(spaceName, tokenClickup) {
     const teamId = '12926935';
 
     const resp = await fetch(
-      `https://api.clickup.com/api/v2/team/${teamId}/space`,
+      `https://api.clickup.com/api/v2/team/12926935/space`,
       {
         method: 'GET',
         headers: {
@@ -658,13 +658,13 @@ async function getSpaceIdFromTeam(spaceName, tokenClickup) {
       if (space) {
         return space.id;
       } else {
-        throw new Error(`Space with name "${spaceName}" not found in team with ID "${teamId}".`);
+        throw new Error(`Space with name "${spaceName}" not found in team with ID "12926935".`);
       }
     } else {
-      throw new Error(`Error fetching spaces from team with ID "${teamId}": ${await resp.text()}`);
+      throw new Error(`Error fetching spaces from team with ID "12926935": ${await resp.text()}`);
     }
   } catch (error) {
-    console.error(`Error getting spaceId from name for team "${teamId}" and spaceName "${spaceName}": ${error.message}`);
+    console.error(`Error getting spaceId from name for team "12926935" and spaceName "${spaceName}": ${error.message}`);
     throw error;
   }
 }
