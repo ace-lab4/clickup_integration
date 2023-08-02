@@ -1,4 +1,3 @@
-require = require('esm')(module);
 const express = require('express');
 const { google } = require('googleapis');
 const bodyParser = require('body-parser');
@@ -9,6 +8,7 @@ const querystring = require('querystring');
 const moment = require('moment-timezone');
 const dotenv = require('dotenv');
 dotenv.config();
+
 // Configuração do banco de dados PostgreSQL
 const pool = new Pool({
   user: 'postgres',
