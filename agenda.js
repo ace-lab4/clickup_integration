@@ -7,13 +7,13 @@ dotenv.config();
 
 // db config 
  //substituir
- const pool = new Pool({
+ const dbConfig = {
   user: 'postgres',
   host: '142.93.62.43',
   database: 'postgres',
   password: '@Cortex@2023',
   port: 5432,
-});
+};
 
 // google credentials config
 const googleConfig = {
