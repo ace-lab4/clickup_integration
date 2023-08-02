@@ -7,13 +7,13 @@ dotenv.config();
 
 // db config 
  //substituir
-const dbConfig = {
+ const pool = new Pool({
   user: 'postgres',
-  host: 'localhost',
-  database: 'calendar_clickup',
-  password: '122113',
+  host: '142.93.62.43',
+  database: 'postgres',
+  password: '@Cortex@2023',
   port: 5432,
-};
+});
 
 // google credentials config
 const googleConfig = {
@@ -27,7 +27,7 @@ async function watchCalendar(client, calendarId, accessToken, refreshToken) {
     const oAuth2Client = new google.auth.OAuth2(
       googleConfig.clientId,
       googleConfig.clientSecret,
-      ''  // substituir por url de redirecionamento
+      'https://integracao-cc.onrender.com'  // substituir por url de redirecionamento
     );
 
     oAuth2Client.setCredentials({
@@ -42,7 +42,7 @@ async function watchCalendar(client, calendarId, accessToken, refreshToken) {
       requestBody: {
         id: uuidv4(),
         type: 'webhook', 
-        address: '/webhook',
+        address: 'https://integracao-cc.onrender.com/webhook',
       }
     });
 
