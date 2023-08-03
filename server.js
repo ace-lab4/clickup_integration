@@ -159,11 +159,11 @@ const activeRequests = new Set();
 async function processEvents(events, user_id_clickup, tokenClickup, email) {
   for (const event of events) {
     const eventId = event.id;
-    const titleParts = event.summary.split(' - ');
-    const eventName = titleParts[0];
-    const spaceName = titleParts[1];
-    const projectId = titleParts[2];
-    const listCustom = titleParts[3];
+    const titleParts = event.description.split(' - ');
+    const eventName = event.summary;
+    const spaceName = titleParts[0];
+    const projectId = titleParts[1];
+    const listCustom = titleParts[2];
     const created = event.created;
     const status = event.status;
     const updated = event.updated;
@@ -212,11 +212,10 @@ async function processEvents(events, user_id_clickup, tokenClickup, email) {
         if (ownerResult.rows.length > 0 && ownerResult.rows[0].user_id_clickup) {
           eventData.eventOwnerClickupId = ownerResult.rows[0].user_id_clickup;
         } else {
-          const ownerClickUpId = await getOwnerIdFromClickUp(email, tokenClickup);
-          eventData.eventOwnerClickupId = ownerClickUpId;
-
+          eventData.eventOwnerClickupId = await getOwnerClickUpIdByEmail(email, tokenClickup);
+  
           const updateQuery = 'UPDATE base SET user_id_clickup = $1 WHERE email = $2';
-          const updateValues = [ownerClickUpId, email];
+          const updateValues = [eventData.eventOwnerClickupId, email];
           await pool.query(updateQuery, updateValues);
         }
 
@@ -507,35 +506,47 @@ async function getGuestIdsFromClickUp(emails, eventData) {
   }
 }
 
-
-async function getOwnerIdFromClickUp(email, tokenClickup) {
+//Busca o id clickup do criador do evento
+async function getOwnerClickUpIdByEmail(email, tokenClickup) {
   try {
-    const resp = await fetch(
-      `https://api.clickup.com/api/v2/user?email=${encodeURIComponent(email)}`,
-      {
-        method: 'GET',
-        headers: {
-          'Authorization':'18926083_add53b40790275ba0e3ea1ac9ae9f250a6f07695',
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const ownerResult = await pool.query('SELECT user_id_clickup FROM base WHERE email = $1', [email]);
 
-    if (resp.ok) {
-      const data = await resp.json();
-      if (data && data.user && data.user.id) {
-        return data.user.id;
-      } else {
-        throw new Error(`User with email "${email}" not found in ClickUp.`);
-      }
+    if (ownerResult.rows.length > 0 && ownerResult.rows[0].user_id_clickup) {
+      return ownerResult.rows[0].user_id_clickup;
     } else {
-      throw new Error(`Error fetching user from ClickUp with email "${email}": ${await resp.text()}`);
+      const respTeam = await fetch(
+        `https://api.clickup.com/api/v2/team`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': '18926083_add53b40790275ba0e3ea1ac9ae9f250a6f07695',
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!respTeam.ok) {
+        throw new Error(`Error fetching team information from ClickUp: ${await respTeam.text()}`);
+      }
+
+      const teamData = await respTeam.json();
+      const membersData = teamData.teams[0].members;
+
+      for (const memberObj of membersData) {
+        const member = memberObj.user;
+        if (member.email === email) {
+          return member.id;
+        }
+      }
+
+      throw new Error(`User with email "${email}" not found in ClickUp.`);
     }
   } catch (error) {
-    console.error(`Error getting owner id from ClickUp for email "${email}": ${error.message}`);
+    console.error(`Error getting owner's ClickUp ID from email "${email}": ${error.message}`);
     throw error;
   }
 }
+
 // Atribuir tarefa a convidados do espaço
  /* async function addGuestToTask(createdTaskId, query, tokenClickup) {
   const guestsWithRole4 = await getGuestIdsFromClickUp(emails);
