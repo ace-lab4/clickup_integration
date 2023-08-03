@@ -159,7 +159,11 @@ const activeRequests = new Set();
 async function processEvents(events, user_id_clickup, tokenClickup, email) {
   for (const event of events) {
     const eventId = event.id;
-    const titleParts = event.description.split(' - ');
+    if (!event.description) {
+      console.log(`Event description is missing for event ${eventId}. Skipping this event.`);
+      continue;
+    }
+    const titleParts = event.description ? event.description.split(' - ') : [];
     const eventName = event.summary;
     const spaceName = titleParts[0];
     const projectId = titleParts[1];
@@ -250,6 +254,7 @@ async function processEvents(events, user_id_clickup, tokenClickup, email) {
     } catch (error) {
       console.error(`Error processing event with email "${email}": ${error.message}`);
     }
+
 
     if (recurringEventId) {
       console.log(`Evento é recorrente (recurringEventId: ${recurringEventId}), não será criada nenhuma tarefa.`);
