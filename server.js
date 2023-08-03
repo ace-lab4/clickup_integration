@@ -363,7 +363,6 @@ async function createTaskClickup(eventData) {
         },
         body: JSON.stringify({
           name: name,
-          status: 'to do',
           assignees: assignees,
           start_date_time: false,
           due_date_time: false,
