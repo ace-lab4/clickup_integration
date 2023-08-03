@@ -388,7 +388,7 @@ async function createTaskClickup(eventData) {
 
 // atualização de tarefas no clickup
 async function updateTaskClickup(taskId, eventData) {
-  const {hasGoaceVcGuests,eventOwnerClickupId, attendeesClickupIds, name, recurringEventId, tokenClickup, declinedAttendees, timeEstimate } = eventData;
+  const {hasGoaceVcGuests,eventOwnerClickupId, attendeesClickupIds, name, recurringEventId, tokenClickup, declinedAttendees, timeEstimate, dueDate, startDate} = eventData;
 
   const isAllDayEvent = !eventData.dueDateTime && !eventData.startDateTime;
 
