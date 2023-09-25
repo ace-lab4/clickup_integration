@@ -708,23 +708,23 @@ async function getFolderIdFromName(spaceId, folderName, tokenClickup) {
     if (resp.ok) {
       const data = await resp.json();
       let folderId;
-      if (/\d/.test(folderName)) {
-        const regex = new RegExp(folderName, 'i');
-        const folder = data.folders.find(folder => regex.test(folder.name));
-        if (folder) {
-          folderId = folder.id;
+
+      const folder = data.folders.find(folder => {
+        if (/\d/.test(folderName)) {
+          const code = folder.name.match(/\d+/);
+          return code && code[0] === folderName;
         } else {
-          throw new Error(`Folder with name "${folderName}" not found in space with ID "${spaceId}".`);
+          return folder.name.trim().toLowerCase() === folderName.trim().toLowerCase();
         }
+      });
+
+      if (folder) {
+        folderId = folder.id;
       } else {
-        const folder = data.folders.find(folder => folder.name.trim().toLowerCase() === folderName.trim().toLowerCase());
-        if (folder) {
-          folderId = folder.id;
-        } else {
-          throw new Error(`Folder with name "${folderName}" not found in space with ID "${spaceId}".`);
-        }
+        throw new Error(`Folder with name "${folderName}" not found in space with ID "${spaceId}".`);
       }
       return folderId;
+      
     } else {
       throw new Error(`Error fetching folders from space with ID "${spaceId}": ${await resp.text()}`);
     }
