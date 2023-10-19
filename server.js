@@ -44,10 +44,11 @@ app.get('/oauth2callback', async (req, res) => {
     const { tokens } = await oAuth2Client.getToken(code);
     const accessToken = tokens.access_token;
     const refreshToken = tokens.refresh_token;
-    res.send(`
-      Token de acesso: ${accessToken}
-      Token de atualização: ${refreshToken}
-    `);
+    
+    req.session.tokens = tokens;
+
+    // Redirect para pagina anterior
+    res.redirect('/')
   } catch (error) {
     console.error('Erro ao obter token de acesso:', error);
     res.status(500).send('Erro ao obter token de acesso.');
