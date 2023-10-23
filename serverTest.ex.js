@@ -1,10 +1,11 @@
-/* const express = require('express');
+const express = require('express');
 const { google } = require('googleapis');
 const bodyParser = require('body-parser');
 const { Pool } = require('pg');
 const axios = require('axios');
 const fetch = require('node-fetch');
 const querystring = require('querystring');
+const cors = require('cors');
 const moment = require('moment-timezone');
 const dotenv = require('dotenv');
 dotenv.config();
@@ -21,6 +22,14 @@ const pool = new Pool({
 const app = express();
 
 app.use(bodyParser.json());
+app.use(cors());
+// Configurar headers CORS no servidor
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'http://192.168.3.114:3000/');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  next();
+});
 
 const googleConfig = {
   clientId:'1068704478160-s12miv13jg9rvkp043b3o5rqp8sa3i67.apps.googleusercontent.com', 
@@ -45,9 +54,17 @@ app.get('/oauth2callback', async (req, res) => {
     const { tokens } = await oAuth2Client.getToken(code);
     const accessToken = tokens.access_token;
     const refreshToken = tokens.refresh_token;
+
+    await axios.post('https://dbb3a7466258-10788679143900993082.ngrok-free.app/auth-success', { success: true, accessToken, refreshToken });
+
     res.send(`
-      Token de acesso: ${accessToken}
-      Token de atualização: ${refreshToken}
+    <script>
+      window.opener.postMessage({ 
+        access_token: '${accessToken}', 
+        refresh_token: '${refreshToken}' 
+      }, 'http://192.168.3.114:3000/');
+      window.close();
+    </script>
     `);
   } catch (error) {
     console.error('Erro ao obter token de acesso:', error);
@@ -64,6 +81,11 @@ app.get('/authorize', (req, res) => {
   });
 
   res.redirect(authorizeUrl);
+});
+
+app.post('/auth-success', (req, res) => {
+  // Enviar uma resposta simples para indicar sucesso
+  res.send({ success: true });
 });
 
 //códigos de acesso clickup

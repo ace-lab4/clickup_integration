@@ -24,6 +24,17 @@ const theme = createTheme({
 
 function Steps() {
     const [activeStep, setActiveStep] = useState(0);
+    const [calendarId, setCalendarId] = useState('');
+    const [authSuccess, setAuthSuccess] = useState(false);
+    const [tokens, setTokens] = useState({
+      access_token: '',
+      refresh_token: ''
+    });
+  
+    const handleAuthSuccess = (receivedTokens) => {
+      setAuthSuccess(true);
+      setTokens(receivedTokens);
+    };
   
     const handleNext = () => {
       setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -31,6 +42,10 @@ function Steps() {
   
     const handleBack = () => {
       setActiveStep((prevActiveStep) => prevActiveStep - 1);
+    };
+
+    const handleSaveCalendarId = (id) => {
+      setCalendarId(id);
     };
   
     return (
@@ -52,22 +67,25 @@ function Steps() {
         </Stepper>
         </div>
         <div className='w-full items-center justify-center flex flex-col space-y-8'>
-        {activeStep === 0 && <Auth />}
-        {activeStep === 1 && <CalendarID />}
-        {activeStep === 2 && <Form />}
+        {activeStep === 0 && <Auth onSuccess={handleAuthSuccess} />}
+        {activeStep === 1 && <CalendarID onSaveCalendarId={handleSaveCalendarId}/>}
+        {activeStep === 2 && <Form tokens={tokens} calendarId={calendarId}/>}
         {activeStep === 3 && <Result />}
         </div>
         <ThemeProvider theme={theme}>
-        <div className='h-auto flex bottom-0 justify-center w-full'>
+        <div className='h-auto flex justify-center w-full'>
           {activeStep !== 0 && (
             <Button onClick={handleBack}>Voltar</Button>
           )}
-          {activeStep < 3 ? (
+          
+          {authSuccess && activeStep < 2 ? (
             <Button variant="contained" onClick={handleNext} className='montserrat-font'>
               Avançar
             </Button>
-          ) : (
-            <Button variant="contained">
+          ): null}
+
+          { activeStep == 2 && (
+            <Button variant="contained" onClick={handleNext}>
               Concluir
             </Button>
           )}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './components/home';
+import axios from 'axios';
 
 function App() {
   return (

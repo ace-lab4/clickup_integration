@@ -5,23 +5,24 @@ import lottie from 'lottie-web';
 import Toltip from './toltip';
 
 
-export default function Form(){
+export default function Form({tokens, calendarId}){
     const [showScrollHint, setShowScrollHint] = useState(true);
-    const [accessToken, setAccessToken] = useState('');
-    const [refreshToken, setRefreshToken] = useState('');
+    const [accessToken, setAccessToken] = useState(tokens.access_token || '');
+    const [refreshToken, setRefreshToken] = useState(tokens.refresh_token || '');
+    const [email, setEmail] = useState('');
+    const [confirmEmail, setConfirmEmail] = useState('');
+    const [formData, setFormData] = useState([]);
 
     useEffect(() => {
-        // Access tokens from session or state management
-        const tokens = window.sessionStorage.getItem('tokens');
-    
-        if (tokens) {
-          const parsedTokens = JSON.parse(tokens);
-          setAccessToken(parsedTokens.access_token);
-          setRefreshToken(parsedTokens.refresh_token);
-        }
-    }, []);
-    
-    
+      const newData = {
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        calendarId: calendarId,
+        email: email,
+      };
+      setFormData([newData]);
+    }, [accessToken, refreshToken, calendarId, email]);
+
     useEffect(() => {
         lottie.loadAnimation({
           container: document.getElementById('tip'),
@@ -39,6 +40,9 @@ export default function Form(){
 
         return () => clearTimeout(timeout);
     }, []); 
+
+    
+    // console.log('Tokens enviados para o Form:', tokens );
     
     return(
         <div className='flex-col flex w-full justify-center items-center h-full mt-8'>
@@ -54,12 +58,16 @@ export default function Form(){
                     <label className='text-sm'>E-mail</label>
                     <input className='form-input p-3 text-sm'
                         placeholder='Seu e-mail institucional'
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                     />
                 </div>
                 <div className='flex-col flex w-8/12 space-y-2'>
                     <label className='text-sm'>Confirme seu e-mail</label>
                     <input className='form-input p-3 text-sm'
                         placeholder='Informe novamente'
+                        value={confirmEmail}
+                        onChange={(e) => setConfirmEmail(e.target.value)}
                     />
                 </div>
                 <div className='flex-col flex w-8/12 space-y-2'>
