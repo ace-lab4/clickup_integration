@@ -664,6 +664,7 @@ async function getSpaceIdFromTeam(spaceName, tokenClickup) {
   try {
     // team id ace: 
     const teamId = '12926935';
+  
 
     const resp = await fetch(
       `https://api.clickup.com/api/v2/team/12926935/space`,
