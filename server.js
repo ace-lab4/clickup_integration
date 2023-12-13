@@ -335,6 +335,9 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     if (titleParts.length > 0) {
       listCustom = titleParts.join(' - ');
     }
+    console.log('spaceName:', spaceName);
+    console.log('projectId:', projectId);
+    console.log('listCustom:', listCustom);
     const created = event.created;
     const status = event.status;
     const updated = event.updated;
