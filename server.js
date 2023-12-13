@@ -32,13 +32,6 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
   next();
 });
-app.use('/dist', express.static('seu/diretorio/dist', { 
-  setHeaders: (res, path) => {
-    if (path.endsWith('.css')) {
-      res.setHeader('Content-Type', 'text/css');
-    }
-  }
-}));
 
 const googleConfig = {
   clientId: process.env.GOOGLE_CLIENT_ID, 
@@ -83,16 +76,6 @@ app.get('/oauth2callback', async (req, res) => {
     }, 60000);
 
     await axios.post('https://integracao-cc.onrender.com/auth-success', { success: true, accessToken, refreshToken });
-
-    res.send(`
-    <script>
-      window.opener.postMessage({ 
-        access_token: '${accessToken}', 
-        refresh_token: '${refreshToken}' 
-      }, 'https://integracaocc.onrender.com');
-      window.close();
-    </script>
-    `);
   } catch (error) {
     console.error('Erro ao obter token de acesso:', error);
     res.status(500).send('Erro ao obter token de acesso.');
