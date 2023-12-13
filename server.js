@@ -320,9 +320,9 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     }
     const titleParts = event.description ? event.description.split(' - ') : [];
     const eventName = event.summary;
-    const spaceName = titleParts[0];
-    const projectId = titleParts.slice(1, -1).join(' - '); // Captura tudo após a primeira parte até a última
-    const listCustom = titleParts.slice(-1).join(' - ');
+    const spaceName = titleParts.shift(); // Pega o primeiro elemento e remove do array
+    const projectId = titleParts.shift(); // Pega o próximo elemento
+    const listCustom = titleParts.join(' - ');
     const created = event.created;
     const status = event.status;
     const updated = event.updated;
