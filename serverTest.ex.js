@@ -1,4 +1,4 @@
-const express = require('express');
+/* const express = require('express');
 const { google } = require('googleapis');
 const bodyParser = require('body-parser');
 const { v4: uuidv4 } = require('uuid');
@@ -14,11 +14,11 @@ dotenv.config();
 
 // Configuração do banco de dados PostgreSQL
 const pool = new Pool({
-  user: 'postgres',
-  host: '142.93.62.43',
-  database: 'postgres',
-  password: '@Cortex@2023',
-  port: 5432,
+  user: '',
+  host: '',
+  database: '',
+  password: '',
+  //port: 
 });
 
 const app = express();
@@ -161,9 +161,7 @@ app.post('/watchCalendar', async (req, res) => {
 
     console.log("data:", email, calendarId, accessToken, refreshToken, initialDate)
 
-    // Save tokens and calendar ID to the database
-    const saveQuery = 'INSERT INTO base (email, calendar_id, access_token, token_refresh, initial_date) VALUES ($1, $2, $3, $4, $5)';
-    await pool.query(saveQuery, [email, calendarId, accessToken, refreshToken, initialDate]);
+
 
     console.log("Passou");
     // Set CORS headers
@@ -192,28 +190,39 @@ app.post('/watchCalendar', async (req, res) => {
 
     const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
 
-    const expirateIn = 30 * 24 * 60 * 60; 
+    const expirateData = 30 * 24 * 60 * 60; 
+
 
     const watchResponse = await calendar.events.watch({
       calendarId: calendarId,
       auth: oAuth2Client,
       key: oAuth2Client.apiKey,
-      
       requestBody: {
         id: uuidv4(),
         type: 'webhook',
         params: {
-          ttl: expirateIn.toString
+          ttl: '2592000' // 1 a 2 meses
         },
         address: 'https://dbb3a7466258-10788679143900993082.ngrok-free.app/webhook',
       },
     })
-    // Verifica se a resposta está definida e se há uma propriedade 'data'
+
+    // console.log("expira em:", expirateData)
 
       console.log('Watch response for calendar', calendarId, ':', watchResponse.data);
       const resourceId = watchResponse.data.resourceId;
-    
-      // Resto do código para atualizar o banco de dados e processar os eventos
+
+    // Save tokens and calendar ID to the database
+    const saveQuery = `
+    INSERT INTO base (email, calendar_id, access_token, token_refresh, initial_date, resource_id)
+    VALUES ($1, $2, $3, $4, $5, $6)
+    ON CONFLICT (calendar_id)
+    DO UPDATE SET
+      access_token = EXCLUDED.access_token,
+      token_refresh = EXCLUDED.token_refresh,
+      resource_id = EXCLUDED.resource_id;
+  `;
+  await pool.query(saveQuery, [email, calendarId, accessToken, refreshToken, initialDate, resourceId]);
 
     // Update the database with the resource ID
     const updateQuery = 'UPDATE base SET resource_id = $1 WHERE calendar_id = $2';
@@ -1041,9 +1050,8 @@ async function removeEventFromDatabase(eventId) {
 const port = 8000;
 /* app.listen(port, () => {
   console.log(`Servidor iniciado em https://integracao-cc.onrender.com`);
-}); */
+}); 
 app.listen(port, () => {
   console.log(`Servidor iniciado em https://dbb3a7466258-10788679143900993082.ngrok-free.app/`);
 })
-
-
+*/
