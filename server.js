@@ -202,16 +202,31 @@ app.post('/watchCalendar', async (req, res) => {
       const resourceId = watchResponse.data.resourceId;
 
     // Save tokens and calendar ID to the database
-    const saveQuery = `
-    INSERT INTO base (email, calendar_id, access_token, token_refresh, initial_date, resource_id)
-    VALUES ($1, $2, $3, $4, $5, $6)
-    ON CONFLICT (calendar_id)
-    DO UPDATE SET
-      access_token = EXCLUDED.access_token,
-      token_refresh = EXCLUDED.token_refresh,
-      resource_id = EXCLUDED.resource_id;
+    const checkQuery = `
+    SELECT * FROM base
+    WHERE calendar_id = $1;
   `;
+  
+  const checkResult = await pool.query(checkQuery, [calendarId]);
+  
+  if (checkResult.rows.length > 0) {
+    // Se existir, faz um update nos tokens
+    const updateQuery = `
+      UPDATE base
+      SET access_token = $1,
+          token_refresh = $2,
+          resource_id = $3
+      WHERE calendar_id = $4;
+    `;
+    await pool.query(updateQuery, [accessToken, refreshToken, resourceId, calendarId]);
+  } else {
+    // Se não existir, salva um novo registro
+    const saveQuery = `
+      INSERT INTO base (email, calendar_id, access_token, token_refresh, initial_date, resource_id)
+      VALUES ($1, $2, $3, $4, $5, $6);
+    `;
     await pool.query(saveQuery, [email, calendarId, accessToken, refreshToken, initialDate, resourceId]);
+  }
 
 
     res.status(200).send('Operação concluída com sucesso');
