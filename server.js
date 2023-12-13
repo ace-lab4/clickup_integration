@@ -33,6 +33,7 @@ app.use((req, res, next) => {
   next();
 });
 
+
 const googleConfig = {
   clientId: process.env.GOOGLE_CLIENT_ID, 
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,  
@@ -76,6 +77,16 @@ app.get('/oauth2callback', async (req, res) => {
     }, 60000);
 
     await axios.post('https://integracao-cc.onrender.com/auth-success', { success: true, accessToken, refreshToken });
+
+    res.send(`
+    <script>
+      window.opener.postMessage({ 
+        access_token: '${accessToken}', 
+        refresh_token: '${refreshToken}' 
+      }, 'https://integracaocc.onrender.com');
+      window.close();
+    </script>
+    `);
   } catch (error) {
     console.error('Erro ao obter token de acesso:', error);
     res.status(500).send('Erro ao obter token de acesso.');
