@@ -240,7 +240,14 @@ app.post('/webhook', async (req, res) => {
 
   const query = 'SELECT access_token, token_refresh, calendar_id, email, user_id_clickup, token_clickup, initial_date FROM base WHERE resource_id = $1';
   const values = [resourceId];
-  const result = await pool.query(query, values);
+  try {
+    const result = await pool.query(query, values);
+    // Process the result
+    console.log(result);
+  } catch (error) {
+    // Handle the error
+    console.error('Error executing query:', error);
+  }
 
   if (result.rows.length > 0) {
     const accessToken = result.rows[0].access_token;
