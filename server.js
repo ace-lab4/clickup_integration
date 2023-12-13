@@ -14,11 +14,11 @@ dotenv.config();
 
 // Configuração do banco de dados PostgreSQL
 const pool = new Pool({
-  user: process.env.USER,
-  host: process.env.HOST,
-  database: process.env.DATABASE,
-  password: process.env.PASSWORD,
-  port: process.env.PORT,
+  user: 'postgres',
+  host: '142.93.62.43',
+  database: 'postgres',
+  password: '@Cortex@2023',
+  port: 5432,
 });
 
 const app = express();
