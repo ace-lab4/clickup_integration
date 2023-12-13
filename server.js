@@ -211,11 +211,8 @@ app.post('/watchCalendar', async (req, res) => {
       token_refresh = EXCLUDED.token_refresh,
       resource_id = EXCLUDED.resource_id;
   `;
-  await pool.query(saveQuery, [email, calendarId, accessToken, refreshToken, initialDate, resourceId]);
+    await pool.query(saveQuery, [email, calendarId, accessToken, refreshToken, initialDate, resourceId]);
 
-    // Update the database with the resource ID
-    const updateQuery = 'UPDATE base SET resource_id = $1 WHERE calendar_id = $2';
-    await pool.query(updateQuery, [resourceId, calendarId]);
 
     res.status(200).send('Operação concluída com sucesso');
 
@@ -234,8 +231,11 @@ app.post('/webhook', async (req, res) => {
 
   const query = 'SELECT access_token, token_refresh, calendar_id, email, user_id_clickup, token_clickup, initial_date FROM base WHERE resource_id = $1';
   const values = [resourceId];
+
+  let result;
+
   try {
-    const result = await pool.query(query, values);
+    result = await pool.query(query, values);
     // Process the result
     console.log(result);
   } catch (error) {
@@ -243,7 +243,7 @@ app.post('/webhook', async (req, res) => {
     console.error('Error executing query:', error);
   }
 
-  if (result.rows.length > 0) {
+  if (result && result.rows.length > 0) {
     const accessToken = result.rows[0].access_token;
     const refreshToken = result.rows[0].token_refresh;
     const calendarId = result.rows[0].calendar_id;
@@ -1043,7 +1043,7 @@ async function removeEventFromDatabase(eventId) {
   }
 }
 
-const port = 8000;
+const port = 3000;
 app.listen(port, () => {
   console.log(`Servidor iniciado em https://integracao-cc.onrender.com`);
 });
