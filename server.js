@@ -1042,12 +1042,13 @@ async function removeEventFromDatabase(eventId) {
   }
 }
 
-const port = 8000;
-/* app.listen(port, () => {
+// const port = 8000;
+app.listen(port, () => {
   console.log(`Servidor iniciado em https://integracao-cc.onrender.com`);
-}); */
+});
+/* 
 app.listen(port, () => {
   console.log(`Servidor iniciado em https://integracao-cc.onrender.com/`);
 })
-
+ */
 
