@@ -316,11 +316,11 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
   for (const event of events) {
     const eventId = event.id;
     if (eventId.toLowerCase().includes('lunch')) {
-      console.log(`O evento ${eventId} é do tipo 'lunch'. Pulando evento.`);
+     // console.log(`O evento ${eventId} é do tipo 'lunch'. Pulando evento.`);
       continue; // Pula para o próximo evento
     }
     if (!event.description) {
-      console.log(`Este evento não tem tem descrição ${eventId}. Pulando evento.`);
+     // console.log(`Este evento não tem tem descrição ${eventId}. Pulando evento.`);
       continue;
     }
     const titleParts = event.description ? event.description.split(' - ') : [];
