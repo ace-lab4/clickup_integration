@@ -315,8 +315,12 @@ const activeRequests = new Set();
 async function processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents) {
   for (const event of events) {
     const eventId = event.id;
+    if (eventId.toLowerCase().includes('lunch')) {
+      console.log(`O evento ${eventId} é do tipo 'lunch'. Pulando evento.`);
+      continue; // Pula para o próximo evento
+    }
     if (!event.description) {
-      console.log(`Event description is missing for event ${eventId}. Skipping this event.`);
+      console.log(`Este evento não tem tem descrição ${eventId}. Pulando evento.`);
       continue;
     }
     const titleParts = event.description ? event.description.split(' - ') : [];
