@@ -212,13 +212,14 @@ app.post('/watchCalendar', async (req, res) => {
   if (checkResult.rows.length > 0) {
     // Se existir, faz um update nos tokens
     const updateQuery = `
-      UPDATE base
-      SET access_token = $1,
-          token_refresh = $2,
-          resource_id = $3
-      WHERE calendar_id = $4;
+    UPDATE base
+    SET access_token = $1,
+        token_refresh = $2,
+        resource_id = $3,
+        initial_date = $4
+    WHERE calendar_id = $5;
     `;
-    await pool.query(updateQuery, [accessToken, refreshToken, resourceId, calendarId]);
+   await pool.query(updateQuery, [accessToken, refreshToken, resourceId, initialDate, calendarId]);
   } else {
     // Se não existir, salva um novo registro
     const saveQuery = `
