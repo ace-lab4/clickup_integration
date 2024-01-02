@@ -324,10 +324,18 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
       continue;
     }
     const titleParts = event.description ? event.description.split(' - ') : [];
+    let spaceName, projectId, listCustom;
+    
+    if (titleParts.length > 3) {
+      spaceName = titleParts[0];
+      projectId = titleParts.slice(1, 3).join(' - ');
+      listCustom = titleParts.slice(3).join(' - ');
+    } else {
+        spaceName = titleParts[0];
+        projectId = titleParts[1];
+        listCustom = titleParts[2];
+    }
     const eventName = event.summary;
-    const spaceName = titleParts[0];
-    const projectId = titleParts[1];
-    const listCustom = titleParts[2];
     const created = event.created;
     const status = event.status;
     const updated = event.updated;
