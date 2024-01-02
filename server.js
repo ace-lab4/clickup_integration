@@ -320,24 +320,9 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     }
     const titleParts = event.description ? event.description.split(' - ') : [];
     const eventName = event.summary;
-    let spaceName = '';
-    let projectId = '';
-    let listCustom = '';
-    // Verifica se há pelo menos um elemento no array
-    if (titleParts.length >= 1) {
-      spaceName = titleParts.shift(); // Pega o primeiro elemento e remove do array
-    }
-    // Verifica se há pelo menos mais um elemento no array (para projectId)
-    if (titleParts.length >= 1) {
-      projectId = titleParts.shift(); // Pega o próximo elemento
-    }
-    // Se ainda houver elementos, une-os novamente usando hífen para listCustom
-    if (titleParts.length > 0) {
-      listCustom = titleParts.join(' - ');
-    }
-    console.log('spaceName:', spaceName);
-    console.log('projectId:', projectId);
-    console.log('listCustom:', listCustom);
+    const spaceName = titleParts[0];
+    const projectId = titleParts[1];
+    const listCustom = titleParts[2];
     const created = event.created;
     const status = event.status;
     const updated = event.updated;
