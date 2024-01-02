@@ -854,10 +854,10 @@ async function deleteTask(eventId) {
 async function getSpaceIdFromTeam(spaceName, tokenClickup) {
   try {
     // team id ace: 
-    const teamId = '12926935';
+    const teamId = '9010135082';
 
     const resp = await fetch(
-      `https://api.clickup.com/api/v2/team/12926935/space`,
+      `https://api.clickup.com/api/v2/team/9010135082/space`,
       {
         method: 'GET',
         headers: {
