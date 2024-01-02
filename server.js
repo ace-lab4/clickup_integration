@@ -787,7 +787,7 @@ async function deleteTask(eventId) {
     
     const query = new URLSearchParams({
       custom_task_ids: 'false',
-      team_id: '9010135082'
+      team_id: '12926935'
     }).toString();
 
     // Faça a solicitação para excluir a tarefa no ClickUp
@@ -854,10 +854,10 @@ async function deleteTask(eventId) {
 async function getSpaceIdFromTeam(spaceName, tokenClickup) {
   try {
     // team id ace: 
-    const teamId = '9010135082';
+    const teamId = '12926935';
 
     const resp = await fetch(
-      `https://api.clickup.com/api/v2/team/9010135082/space`,
+      `https://api.clickup.com/api/v2/team/12926935/space`,
       {
         method: 'GET',
         headers: {
