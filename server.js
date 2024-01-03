@@ -438,7 +438,7 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     } else if (!eventExists && status !== 'cancelled') {
       await saveEvent(eventId, created, status, updated);
       console.log('Evento salvo:', eventId, created, status, updated);
-    } else {
+    } else if ( eventExists && status !== 'cancelled') {
       console.log('Evento já existe, buscando atualização:', eventId, eventName);
       await checkEventChanges(eventId, updated);
       await updateTaskClickup(existingTask,eventExists, eventData);
