@@ -435,10 +435,7 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     
     if (created < initial_date) {
       console.log(`Evento ${eventName} não atende ao critério de data, não será salvo nem criado.`);
-    } else if (status === 'cancelled') {
-      console.log('Evento cancelado, deletando a task.');
-      await deleteTask(eventId);
-    } else if (!eventExists) {
+    } else if (!eventExists && status !== 'cancelled') {
       await saveEvent(eventId, created, status, updated);
       console.log('Evento salvo:', eventId, created, status, updated);
     } else {
@@ -501,7 +498,7 @@ async function createTaskClickup(eventData) {
 
 
   if (status === 'cancelled') {
-    console.log(`O evento com ID ${eventId} foi cancelado. Chamando a função para excluir a tarefa.`);
+    console.log(`O evento com ID ${eventId} e nome ${name} foi cancelado. Chamando a função para excluir a tarefa.`);
     await deleteTask(eventId);
     return null; // Ou outra lógica de retorno, dependendo do seu caso
   }
@@ -589,10 +586,10 @@ async function updateTaskClickup(taskId, eventData) {
 
 
   if (status === 'cancelled') {
-    console.log(`O evento com ID ${eventId} foi cancelado. Chamando a função para excluir a tarefa.`);
+    console.log(`O evento com ID ${eventId} e nome ${name} foi cancelado. Chamando a função para excluir a tarefa.`);
     await deleteTask(eventId);
-    return null  }
-
+    return null;
+  }
 
   try {
 
