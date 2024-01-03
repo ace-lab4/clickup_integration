@@ -500,9 +500,8 @@ async function createTaskClickup(eventData, eventExists) {
   }
 
 
-  if (status === 'cancelled' && eventExists) {
-    console.log(`O evento com ID ${eventId} e nome ${name} foi cancelado. Chamando a função para excluir a tarefa.`);
-    await deleteTask(eventId);
+  if (status === 'cancelled' && !eventExists) {
+    console.log(`O evento com ID ${eventId} e nome ${name} foi cancelado.`);
     return null; // Ou outra lógica de retorno, dependendo do seu caso
   }
 
@@ -589,8 +588,7 @@ async function updateTaskClickup(existingTask,eventExists, eventData, taskId) {
 
 
   if (status === 'cancelled' && eventExists) {
-    console.log(`O evento com ID ${eventId} e nome ${name} foi cancelado. Chamando a função para excluir a tarefa.`);
-    await deleteTask(eventId);
+    console.log(`O evento com ID ${eventId} e nome ${name} foi cancelado.`);
     return null;
   }
 
@@ -629,7 +627,7 @@ async function updateTaskClickup(existingTask,eventExists, eventData, taskId) {
 
     if (resp.ok) {
       console.log(`Tarefa atualizada com sucesso: ${taskId}`);
-    } else {
+    } else if (resp.error){
       const errorMessage = await resp.text();
       console.error(`Erro ao atualizar tarefa ${taskId} nome ${name}: ${errorMessage}`);
     }
