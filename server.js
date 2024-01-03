@@ -441,7 +441,7 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     } else {
       console.log('Evento já existe, buscando atualização:', eventId, eventName);
       await checkEventChanges(eventId, updated);
-      await updateTaskClickup(existingTask, eventData);
+      await updateTaskClickup(existingTask,eventExists, eventData);
     }    
     
     if (!processingTasksMap.has(eventId) && status !== 'cancelled') {
@@ -454,7 +454,7 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
           console.log(`Tarefa já criada para o evento ${eventId}.`);
           return null;
         } else {
-          const createdTaskId = await createTaskClickup(eventData);
+          const createdTaskId = await createTaskClickup(eventData,eventExists);
     
           console.log(`Tarefa criada para o evento ${eventId}: ${createdTaskId}`);
     
@@ -475,7 +475,7 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
 // Funções para criação e manipulação da agenda e clickup
 
 //Criação de task
-async function createTaskClickup(eventData) {
+async function createTaskClickup(eventData, eventExists) {
   const { folderName, spaceName, eventId, hasGoaceVcGuests, eventOwnerClickupId,
   attendeesClickupIds, name, recurringEventId, tokenClickup, attendees, listCustom, timeEstimate, dueDate, startDate, status } = eventData;
 
@@ -497,7 +497,7 @@ async function createTaskClickup(eventData) {
   }
 
 
-  if (status === 'cancelled') {
+  if (status === 'cancelled' && eventExists) {
     console.log(`O evento com ID ${eventId} e nome ${name} foi cancelado. Chamando a função para excluir a tarefa.`);
     await deleteTask(eventId);
     return null; // Ou outra lógica de retorno, dependendo do seu caso
@@ -564,7 +564,7 @@ async function createTaskClickup(eventData) {
 }
 
 // atualização de tarefas no clickup
-async function updateTaskClickup(taskId, eventData) {
+async function updateTaskClickup(existingTask,eventExists, eventData) {
   const {hasGoaceVcGuests,eventOwnerClickupId, attendeesClickupIds, name, recurringEventId, tokenClickup, declinedAttendees, timeEstimate, dueDate, startDate, status, eventId} = eventData;
 
   const isAllDayEvent = !eventData.dueDateTime && !eventData.startDateTime;
@@ -585,7 +585,7 @@ async function updateTaskClickup(taskId, eventData) {
   }
 
 
-  if (status === 'cancelled') {
+  if (status === 'cancelled' && eventExists) {
     console.log(`O evento com ID ${eventId} e nome ${name} foi cancelado. Chamando a função para excluir a tarefa.`);
     await deleteTask(eventId);
     return null;
