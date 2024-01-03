@@ -433,13 +433,13 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     const eventExists = await checkEventExistence(eventId);
     const existingTask = await checkTaskExistence(eventId);
     
-    if (created < initial_date) {
+    if (created < initial_date && status !== 'cancelled') {
       console.log(`Evento ${eventName} não atende ao critério de data, não será salvo nem criado.`);
     } else if (!eventExists && status !== 'cancelled') {
       await saveEvent(eventId, created, status, updated);
       console.log('Evento salvo:', eventId, created, status, updated);
     } else {
-      console.log('Evento já existe, buscando atualização:', eventId);
+      console.log('Evento já existe, buscando atualização:', eventId, eventName);
       await checkEventChanges(eventId, updated);
       await updateTaskClickup(existingTask, eventData);
     }    
