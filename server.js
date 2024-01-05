@@ -268,8 +268,6 @@ app.post('/webhook', async (req, res) => {
     const email = result.rows[0].email;
     const initial_date = result.rows[0].initial_date;
 
-    const due_date = new Date(initial_date)
-
     const googleConfig = {
       clientId:'1068704478160-s12miv13jg9rvkp043b3o5rqp8sa3i67.apps.googleusercontent.com',
       clientSecret: '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', 
@@ -288,6 +286,7 @@ app.post('/webhook', async (req, res) => {
 
     const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
 
+    const due_date = parseDate(initial_date)
 
     calendar.events.list({
       calendarId: calendarId,
@@ -478,12 +477,23 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
         processingTasksMap.delete(eventId);
       }
     }
-  }}
+}}
 
+async function parseDate(initial_date){
+  const match = initial_date.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}\.\d{3})Z$/);
+  
+  if (!match) {
+    throw new Error('Formato de data ISO inválido');
+  }
 
+  const [, year, month, day, hours, minutes, seconds] = match;
+  const milliseconds = parseFloat(match[6]) * 1000;
+
+  return new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds, milliseconds));
+}
 // Funções para criação e manipulação da agenda e clickup
 
-//Criação de task
+// Criação de task
 async function createTaskClickup(eventData, eventExists) {
   const { folderName, spaceName, eventId, hasGoaceVcGuests, eventOwnerClickupId,
   attendeesClickupIds, name, recurringEventId, tokenClickup, attendees, listCustom, timeEstimate, dueDate, startDate, status } = eventData;
