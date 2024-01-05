@@ -268,6 +268,8 @@ app.post('/webhook', async (req, res) => {
     const email = result.rows[0].email;
     const initial_date = result.rows[0].initial_date;
 
+    const due_date = new Date(initial_date)
+
     const googleConfig = {
       clientId:'1068704478160-s12miv13jg9rvkp043b3o5rqp8sa3i67.apps.googleusercontent.com',
       clientSecret: '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', 
@@ -292,7 +294,7 @@ app.post('/webhook', async (req, res) => {
       singleEvents: true,
       orderBy: 'updated',
       showDeleted: true,
-      updatedMin: initial_date,
+      updatedMin: due_date,
       auth: oAuth2Client, 
     }, async (err, response) => {
       if (err) return console.log('Error: ' + err);
