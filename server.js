@@ -291,8 +291,10 @@ app.post('/webhook', async (req, res) => {
       calendarId: calendarId,
       singleEvents: true,
       showDeleted: true,
-      auth: oAuth2Client, 
+      auth: oAuth2Client,
+      createdMin: initial_date,
       updatedMin: initial_date,
+      startMin: initial_date,
     }, async (err, response) => {
       try {
         if (err) throw new Error('Error in calendar.events.list: ' + err);
