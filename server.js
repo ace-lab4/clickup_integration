@@ -342,6 +342,7 @@ const activeRequests = new Set();
 async function processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents) {
   for (const event of events) {
     const created = event.created;
+    console.log('criado em:', created)
     if (created < initial_date) {
       continue; 
     }
