@@ -290,7 +290,6 @@ app.post('/webhook', async (req, res) => {
       calendarId: calendarId,
       singleEvents: true,
       orderBy: 'startTime',
-      timeMax: initial_date,
       showDeleted: true,
       auth: oAuth2Client, 
     }, async (err, response) => {
@@ -300,8 +299,10 @@ app.post('/webhook', async (req, res) => {
 
       const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
-      if (events.length) {
-        await processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents);
+      const filteredEvents = events.filter(event => new Date(event.start.dateTime) >= new Date(initial_date));
+
+      if (filteredEvents.length) {
+        await processEvents(filteredEvents, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents);
       }
     });
   }
@@ -311,8 +312,8 @@ const processingTasksMap = new Map();
 const activeRequests = new Set();
 
 // função de processo de notificação e extração de dados para tarefa
-async function processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents) {
-  for (const event of events) {
+async function processEvents(filteredEvents, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents) {
+  for (const event of filteredEvents) {
     const eventId = event.id;
     if (eventId.toLowerCase().includes('lunch')) {
      // console.log(`O evento ${eventId} é do tipo 'lunch'. Pulando evento.`);
