@@ -311,9 +311,8 @@ app.post('/webhook', async (req, res) => {
       const response = await calendar.events.list({
         calendarId: calendarId,
         singleEvents: true,
-        orderBy: 'updated',
         showDeleted: true,
-        updatedMin: due_date,
+        timeMax: due_date,
         auth: oAuth2Client,
       });
 
