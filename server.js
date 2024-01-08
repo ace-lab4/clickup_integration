@@ -316,17 +316,9 @@ app.post('/webhook', async (req, res) => {
         auth: oAuth2Client,
       });
 
-      const data  = response.data.items
+      const events  = response.data.items
 
-      const events = data.filter(event => {
-        console.log('Event created:', event.created);
-        console.log('Initial date:', initial_date);
-      
-        return event.created > initial_date;
-      
-      });
-      
-      console.log(events)
+      // console.log(events)
 
       const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
@@ -348,7 +340,10 @@ const activeRequests = new Set();
 
 // função de processo de notificação e extração de dados para tarefa
 async function processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents) {
-  for (const event of events) {
+  
+  const filteredEvents = events.filter(event => event.created >= initial_date);
+
+  for (const event of filteredEvents) {
     const eventId = event.id;
     if (eventId.toLowerCase().includes('lunch')) {
      // console.log(`O evento ${eventId} é do tipo 'lunch'. Pulando evento.`);
