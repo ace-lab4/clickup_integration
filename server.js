@@ -342,7 +342,9 @@ const activeRequests = new Set();
 async function processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents) {
   for (const event of events) {
     const created = event.created;
-    console.log('criado em:', created)
+    const startDate = event.start.date;
+
+    console.log('criado em:', startDate)
     if (created < initial_date) {
       continue; 
     }
@@ -377,7 +379,6 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     const dueDateTime = event.end.dateTime;
     const startDateTime = event.start.dateTime;
     const dueDate = event.end.date;
-    const startDate = event.start.date;
     const recurringEventId  = event.recurringEventId;
     const declinedGuests = event.attendees ? event.attendees.filter(attendee => attendee.responseStatus === 'declined') : [];    const startDateTimeBrasilia = moment(event.start.dateTime).tz('America/Sao_Paulo');
     const dueDateTimeBrasilia = moment(event.end.dateTime).tz('America/Sao_Paulo');
