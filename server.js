@@ -441,7 +441,7 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     }else if (status === 'cancelled' && eventExists){
       await deleteTask(eventId);
       console.log(`O evento com ID ${eventId} e nome ${eventName} foi cancelado. Chamando a função para excluir a tarefa.`);
-    } else if (!eventExists && status !== 'cancelled') {
+    } else if (!eventExists) {
       await saveEvent(eventId, created, status, updated);
       console.log('Evento salvo:', eventId, created, status, updated);
     } else if ( eventExists && status !== 'cancelled') {
