@@ -297,9 +297,12 @@ app.post('/webhook', async (req, res) => {
       try {
         if (err) throw new Error('Error in calendar.events.list: ' + err);
     
-        const events = response.data.items;
-    
-        //console.log(events)
+        const events = response.data.items.filter(event => moment(event.updated).toISOString() >= moment(initial_date).toISOString());
+
+        console.log(events)
+
+        console.log(`a data inicial é ${initial_date}`)
+
 
         const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
@@ -307,12 +310,12 @@ app.post('/webhook', async (req, res) => {
 
        // console.log(due_date)
 
-        const filteredEvents = events.filter(event => event.updated >= initial_date);
+        // const filteredEvents = events.filter(event => event.updated >= initial_date);
 
-        console.log(filteredEvents.length);
+        // console.log(filteredEvents);
 
-        if (filteredEvents.length) {
-         await processEvents(filteredEvents, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents);
+        if (events.length) {
+         await processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents);
         }
       } catch (error) {
         console.error('Error in calendar.events.list callback:', error);
@@ -325,8 +328,8 @@ const processingTasksMap = new Map();
 const activeRequests = new Set();
 
 // função de processo de notificação e extração de dados para tarefa
-async function processEvents(filteredEvents, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents) {
-  for (const event of filteredEvents) {
+async function processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents) {
+  for (const event of events) {
     const eventId = event.id;
     if (eventId.toLowerCase().includes('lunch')) {
      // console.log(`O evento ${eventId} é do tipo 'lunch'. Pulando evento.`);
