@@ -299,8 +299,8 @@ app.post('/webhook', async (req, res) => {
 
       const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
-      const filteredEvents = events.filter(event => new Date(event.start.dateTime) >= new Date(initial_date));
-
+      const filteredEvents = events.filter(event => new Date(event.start.dateTime).toISOString() >= new Date(initial_date).toISOString());
+      
       if (filteredEvents.length) {
         await processEvents(filteredEvents, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents);
       }
