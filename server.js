@@ -341,10 +341,14 @@ const activeRequests = new Set();
 // função de processo de notificação e extração de dados para tarefa
 async function processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents) {
   
-  const filteredEvents = events.filter(event => event.created >= initial_date);
 
   for (const event of filteredEvents) {
+    const created = event.created;
+    if (created < initial_date) {
+      continue; 
+    }
     const eventId = event.id;
+    
     if (eventId.toLowerCase().includes('lunch')) {
      // console.log(`O evento ${eventId} é do tipo 'lunch'. Pulando evento.`);
       continue; // Pula para o próximo evento
