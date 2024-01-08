@@ -245,29 +245,15 @@ app.post('/webhook', async (req, res) => {
   res.status(200).end();
 
   const resourceId = req.headers['x-goog-resource-id'];
-
   const query = 'SELECT access_token, token_refresh, calendar_id, email, user_id_clickup, token_clickup, initial_date FROM base WHERE resource_id = $1';
   const values = [resourceId];
 
-  let result;
-
   try {
-    result = await pool.query(query, values);
-    // Process the result
-   // console.log(result);
-  } catch (error) {
-    // Handle the error
-    console.error('Error executing query:', error);
-  }
+    const { rows } = await pool.query(query, values);
 
-  if (result && result.rows.length > 0) {
-    const accessToken = result.rows[0].access_token;
-    const refreshToken = result.rows[0].token_refresh;
-    const calendarId = result.rows[0].calendar_id;
-    const user_id_clickup = result.rows[0].user_id_clickup;
-    const tokenClickup = result.rows[0].token_clickup;
-    const email = result.rows[0].email;
-    const initial_date = result.rows[0].initial_date;
+    if (rows.length > 0) {
+      const { accessToken, refreshToken, calendarId, user_id_clickup, tokenClickup, email, initial_date } = rows[0];
+
 
     const googleConfig = {
       clientId:'1068704478160-s12miv13jg9rvkp043b3o5rqp8sa3i67.apps.googleusercontent.com',
@@ -287,35 +273,33 @@ app.post('/webhook', async (req, res) => {
 
     const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
 
-    calendar.events.list({
-      calendarId: calendarId,
-      singleEvents: true,
-      showDeleted: true,
-      auth: oAuth2Client,
-      createdMin: initial_date,
-      updatedMin: initial_date,
-      startMin: initial_date,
-    }, async (err, response) => {
-      try {
-        if (err) throw new Error('Error in calendar.events.list: ' + err);
-    
-        const events = response.data.items
+    try {
+      const response = await calendar.events.list({
+        calendarId: calendarId,
+        singleEvents: true,
+        showDeleted: true,
+        auth: oAuth2Client,
+      });
 
-        console.log(events)
+      const events = response.data.items.filter(event => new Date(event.created) >= initial_date);
 
-        console.log(`a data inicial é ${initial_date}`)
+      console.log(events);
+      console.log(`A data inicial é ${initial_date}`);
 
-        const cancelledEvents = events.filter(event => event.status === 'cancelled');
+      const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
-        if (events.length) {
-         await processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents);
-        }
-      } catch (error) {
-        console.error('Error in calendar.events.list callback:', error);
+      if (events.length > 0) {
+        await processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents);
       }
-    });
+    } catch (error) {
+      console.error('Error in fetching or processing events:', error.message || error);
+    }
   }
+} catch (error) {
+  console.error('Error executing query:', error);
+}
 });
+
 
 const processingTasksMap = new Map();
 const activeRequests = new Set();
