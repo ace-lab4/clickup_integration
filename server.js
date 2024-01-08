@@ -305,10 +305,13 @@ app.post('/webhook', async (req, res) => {
 
     const due_date = atualizar_due_date();
 
+    console.log(`a due_date é ${due_date}`)
+
     try {
       const response = await calendar.events.list({
         calendarId: calendarId,
         singleEvents: true,
+        orderBy: 'updated',
         showDeleted: true,
         updatedMin: due_date,
         auth: oAuth2Client,
@@ -316,7 +319,7 @@ app.post('/webhook', async (req, res) => {
 
       const events = response.data.items
 
-      console.log(events)
+     // console.log(events)
 
       const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
