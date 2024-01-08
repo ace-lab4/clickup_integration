@@ -246,14 +246,22 @@ app.post('/webhook', async (req, res) => {
 
   const resourceId = req.headers['x-goog-resource-id'];
   const query = 'SELECT access_token, token_refresh, calendar_id, email, user_id_clickup, token_clickup, initial_date FROM base WHERE resource_id = $1';
-  const values = [resourceId];
+  const values = [resourceId]; 
+
+  let result;
 
   try {
-    const { rows } = await pool.query(query, values);
+    result = await pool.query(query, values);
 
-    if (rows.length > 0) {
-      const { accessToken, refreshToken, calendarId, user_id_clickup, tokenClickup, email, initial_date } = rows[0];
-
+    
+  if (result && result.rows.length > 0) {
+    const accessToken = result.rows[0].access_token;
+    const refreshToken = result.rows[0].token_refresh;
+    const calendarId = result.rows[0].calendar_id;
+    const user_id_clickup = result.rows[0].user_id_clickup;
+    const tokenClickup = result.rows[0].token_clickup;
+    const email = result.rows[0].email;
+    const initial_date = result.rows[0].initial_date;
 
     const googleConfig = {
       clientId:'1068704478160-s12miv13jg9rvkp043b3o5rqp8sa3i67.apps.googleusercontent.com',
