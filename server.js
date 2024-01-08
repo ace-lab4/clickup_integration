@@ -239,6 +239,28 @@ app.post('/watchCalendar', async (req, res) => {
   }
 });
 
+async function atualizar_due_date() {
+  let due_date = moment('2024-01-01'); 
+
+  function verificar_e_atualizar() {
+    const agora = moment();
+    const diferenca_dias = agora.diff(due_date, 'days');
+
+    if (diferenca_dias >= 31) {
+      console.log('Atualizando devido à passagem de 31 dias.');
+      due_date = agora;
+      due_date.add(1, 'months').startOf('month'); 
+    }
+
+    console.log('Data atual:', due_date.toISOString());
+
+    setTimeout(verificar_e_atualizar, 24 * 60 * 60 * 1000);
+  }
+
+  verificar_e_atualizar();
+
+  return () => due_date.toISOString();
+}
 
 // Rota para solicitações do webhook
 app.post('/webhook', async (req, res) => {
@@ -281,18 +303,20 @@ app.post('/webhook', async (req, res) => {
 
     const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
 
+    const due_date = atualizar_due_date();
+
     try {
       const response = await calendar.events.list({
         calendarId: calendarId,
         singleEvents: true,
         showDeleted: true,
+        updatedMin: due_date,
         auth: oAuth2Client,
       });
 
-      const events = response.data.items.filter(event => new Date(event.created) >= initial_date);
+      const events = response.data.items
 
-      console.log(events);
-      console.log(`A data inicial é ${initial_date}`);
+      console.log(events)
 
       const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
