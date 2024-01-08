@@ -435,7 +435,7 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     const date_limit = new Date(initial_date)
     const event_date = new Date(created)
 
-    if (event_date < date_limit && status !== 'cancelled') {
+    if (event_date < date_limit) {
       console.log(`Evento ${eventName} não atende ao critério de data, não será salvo nem criado.`);
       console.log(`A data do evento ${eventName} é ${event_date} e a data inicial da agenda é ${date_limit}`)
     }else if (status === 'cancelled' && eventExists){
