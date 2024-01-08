@@ -289,9 +289,9 @@ app.post('/webhook', async (req, res) => {
     calendar.events.list({
       calendarId: calendarId,
       singleEvents: true,
-      orderBy: 'updated',
+      orderBy: 'startTime',
+      timeMax: initial_date,
       showDeleted: true,
-      updatedMin: initial_date,
       auth: oAuth2Client, 
     }, async (err, response) => {
       if (err) return console.log('Error: ' + err);
