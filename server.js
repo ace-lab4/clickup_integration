@@ -303,22 +303,24 @@ app.post('/webhook', async (req, res) => {
 
     const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
 
-    const due_date = atualizar_due_date();
+    // const due_date = atualizar_due_date();
 
-    console.log(`a due_date é ${due_date}`)
+    // console.log(`a due_date é ${due_date}`)
 
     try {
       const response = await calendar.events.list({
         calendarId: calendarId,
         singleEvents: true,
+        orderBy: 'startTime',
         showDeleted: true,
-        timeMax: due_date,
+        updatedMin: initial_date,
+        timeMax: initial_date,
         auth: oAuth2Client,
       });
 
       const events = response.data.items
 
-     // console.log(events)
+     console.log(events)
 
       const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
