@@ -299,16 +299,16 @@ app.post('/webhook', async (req, res) => {
     
         const events = response.data.items;
     
-        console.log(events)
+        //console.log(events)
 
         const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
-        const due_date = momentRegular(initial_date).format('YYYY-MM-DD'); 
+        //const due_date = momentRegular(initial_date).format('YYYY-MM-DD'); 
 
-        console.log(due_date)
-        
-        const filteredEvents = events.filter(event => event.start.date >= due_date);
-    
+       // console.log(due_date)
+
+        const filteredEvents = events.filter(event => event.updated >= initial_date);
+
         console.log(filteredEvents.length);
 
         if (filteredEvents.length) {
