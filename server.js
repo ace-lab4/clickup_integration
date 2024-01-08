@@ -435,22 +435,22 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     const date_limit = new Date(initial_date)
     const event_date = new Date(created)
 
-    if (event_date < date_limit) {
+    if (event_date < date_limit && eventData.status !== 'cancelled') {
       console.log(`Evento ${eventName} não atende ao critério de data, não será salvo nem criado.`);
       console.log(`A data do evento ${eventName} é ${event_date} e a data inicial da agenda é ${date_limit}`)
-    }else if (status === 'cancelled' && eventExists){
+    }else if (eventData.status === 'cancelled' && eventExists){
       await deleteTask(eventId);
       console.log(`O evento com ID ${eventId} e nome ${eventName} foi cancelado. Chamando a função para excluir a tarefa.`);
-    } else if (!eventExists) {
+    } else if (!eventExists && eventData.status !== 'cancelled') {
       await saveEvent(eventId, created, status, updated);
       console.log('Evento salvo:', eventId, created, status, updated);
-    } else if ( eventExists && status !== 'cancelled') {
+    } else if ( eventExists && eventData.status !== 'cancelled') {
       console.log('Evento já existe, buscando atualização:', eventId, eventName);
       await checkEventChanges(eventId, updated);
       await updateTaskClickup(existingTask,eventExists, eventData);
     }    
     
-    if (!processingTasksMap.has(eventId) && status !== 'cancelled') {
+    if (!processingTasksMap.has(eventId)) {
       processingTasksMap.set(eventId, true);
     
       try {
@@ -514,7 +514,7 @@ async function createTaskClickup(eventData, eventExists) {
   }
 
 
-  if (status === 'cancelled' && !eventExists) {
+  if (status === 'cancelled') {
     console.log(`O evento com ID ${eventId} e nome ${name} foi cancelado.`);
     return null; // Ou outra lógica de retorno, dependendo do seu caso
   }
