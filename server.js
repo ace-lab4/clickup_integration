@@ -318,7 +318,7 @@ app.post('/webhook', async (req, res) => {
 
       const data  = response.data.items
 
-      const events = response.filter(event => event.created > initial_date);
+      const events = data.filter(event => event.created > initial_date);
 
       console.log(events)
 
