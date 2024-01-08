@@ -318,8 +318,14 @@ app.post('/webhook', async (req, res) => {
 
       const data  = response.data.items
 
-      const events = data.filter(event => event.created > initial_date);
-
+      const events = data.filter(event => {
+        console.log('Event created:', event.created);
+        console.log('Initial date:', initial_date);
+      
+        return event.created > initial_date;
+      
+      });
+      
       console.log(events)
 
       const cancelledEvents = events.filter(event => event.status === 'cancelled');
