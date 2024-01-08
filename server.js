@@ -8,7 +8,7 @@ const fetch = require('node-fetch');
 const querystring = require('querystring');
 const cors = require('cors');
 const moment = require('moment-timezone');
-const moment = require('moment');
+const momentRegular = require('moment');
 const dotenv = require('dotenv');
 const { isNull } = require('util');
 dotenv.config();
@@ -301,7 +301,7 @@ app.post('/webhook', async (req, res) => {
     
         const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
-        const due_date = moment(initial_date).format('YYYY-MM-DD'); 
+        const due_date = momentRegular(initial_date).format('YYYY-MM-DD'); 
 
         const filteredEvents = events.filter(event => event.start.date >= due_date);
     
