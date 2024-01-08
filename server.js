@@ -293,16 +293,22 @@ app.post('/webhook', async (req, res) => {
       showDeleted: true,
       auth: oAuth2Client, 
     }, async (err, response) => {
-      if (err) return console.log('Error: ' + err);
+      try {
+        if (err) throw new Error('Error in calendar.events.list: ' + err);
+    
+        const events = response.data.items;
+    
+        const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
-      const events = response.data.items;
-
-      const cancelledEvents = events.filter(event => event.status === 'cancelled');
-
-      const filteredEvents = events.filter(event => new Date(event.start.dateTime).toISOString() >= new Date(initial_date).toISOString());
+        const filteredEvents = events.filter(event => new Date(event.start.dateTime).toISOString() >= new Date(initial_date).toISOString());
       
-      if (filteredEvents.length) {
-        await processEvents(filteredEvents, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents);
+       console.log(filteredEvents)
+
+        if (filteredEvents.length) {
+         await processEvents(filteredEvents, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents);
+        }
+      } catch (error) {
+        console.error('Error in calendar.events.list callback:', error);
       }
     });
   }
