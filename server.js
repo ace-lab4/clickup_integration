@@ -316,9 +316,11 @@ app.post('/webhook', async (req, res) => {
         auth: oAuth2Client,
       });
 
-      const events = response.data.items
+      const data  = response.data.items
 
-      // console.log(events)
+      const events = response.filter(event => event.created > initial_date);
+
+      console.log(events)
 
       const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
@@ -341,11 +343,7 @@ const activeRequests = new Set();
 // função de processo de notificação e extração de dados para tarefa
 async function processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents) {
   for (const event of events) {
-    const created = event.created;
-    if (moment(created).isSameOrAfter(initial_date)) {
-
     const eventId = event.id;
-
     if (eventId.toLowerCase().includes('lunch')) {
      // console.log(`O evento ${eventId} é do tipo 'lunch'. Pulando evento.`);
       continue; // Pula para o próximo evento
@@ -403,7 +401,6 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
       email: email,
       status: status,
     };
-    }
     //console.log('time:', timeEstimateInt32)
     //console.log(declinedGuests);
 
