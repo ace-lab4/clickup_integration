@@ -290,29 +290,20 @@ app.post('/webhook', async (req, res) => {
     calendar.events.list({
       calendarId: calendarId,
       singleEvents: true,
-      orderBy: 'startTime',
       showDeleted: true,
       auth: oAuth2Client, 
+      updatedMin: initial_date,
     }, async (err, response) => {
       try {
         if (err) throw new Error('Error in calendar.events.list: ' + err);
     
-        const events = response.data.items.filter(event => event.updated >= initial_date);
+        const events = response.data.items
 
         console.log(events)
 
         console.log(`a data inicial é ${initial_date}`)
 
-
         const cancelledEvents = events.filter(event => event.status === 'cancelled');
-
-        //const due_date = momentRegular(initial_date).format('YYYY-MM-DD'); 
-
-       // console.log(due_date)
-
-        // const filteredEvents = events.filter(event => event.updated >= initial_date);
-
-        // console.log(filteredEvents);
 
         if (events.length) {
          await processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents);
