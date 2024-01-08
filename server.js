@@ -311,7 +311,7 @@ app.post('/webhook', async (req, res) => {
       const response = await calendar.events.list({
         calendarId: calendarId,
         singleEvents: true,
-        orderBy: 'startTime',
+        orderBy: 'updated',
         showDeleted: true,
         auth: oAuth2Client,
       });
@@ -343,8 +343,9 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
   for (const event of events) {
     const created = event.created;
     const startDate = event.start.date;
+    const updated = event.updated;
 
-    console.log('criado em:', startDate)
+    console.log('criado em:', updated)
     if (created < initial_date) {
       continue; 
     }
@@ -372,7 +373,6 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     }
     const eventName = event.summary;
     const status = event.status;
-    const updated = event.updated;
     const guests = event.attendees ? event.attendees.filter(guest => guest.email.endsWith('goace.vc')) : [];
     const guestEmails = guests.map(guest => guest.email);
     const hasGoaceVcGuests = guests.length > 0;
