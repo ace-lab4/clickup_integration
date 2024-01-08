@@ -297,7 +297,7 @@ app.post('/webhook', async (req, res) => {
       try {
         if (err) throw new Error('Error in calendar.events.list: ' + err);
     
-        const events = response.data.items.filter(event => moment(event.updated).toISOString() >= moment(initial_date).toISOString());
+        const events = response.data.items.filter(event => event.updated >= moment(initial_date).toISOString());
 
         console.log(events)
 
