@@ -340,9 +340,7 @@ const activeRequests = new Set();
 
 // função de processo de notificação e extração de dados para tarefa
 async function processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents) {
-  
-
-  for (const event of filteredEvents) {
+  for (const event of events) {
     const created = event.created;
     if (created < initial_date) {
       continue; 
