@@ -464,7 +464,7 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
         if (existingTaskId) {
           console.log(`Tarefa já criada para o evento ${eventId}.`);
           return null;
-        } else if (eventExists && status !== 'cancelled'){
+        } else if (eventExists){
 
           const createdTaskId = await createTaskClickup(eventData);
     
@@ -474,6 +474,9 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
             await updateEventWithTaskId(eventId, createdTaskId);
             console.log(`Tarefa atualizada para o evento ${eventId}: ${createdTaskId}`);
           }
+        }
+        if (!eventExists){
+          console.log('evento nâo foi salvo', eventName)
         }
 
       } catch (error) {
