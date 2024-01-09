@@ -313,14 +313,14 @@ app.post('/webhook', async (req, res) => {
         calendarId: calendarId,
         singleEvents: true,
         orderBy: 'updated',
-        updatedMin: initialDate,
+        updatedMin: initial_date,
         showDeleted: true,
         auth: oAuth2Client,
       });
 
       const events  = response.data.items
 
-      console.log(events)  
+      //console.log(events)  
 
       const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
