@@ -321,8 +321,8 @@ app.post('/webhook', async (req, res) => {
   
         const events = response.data.items;
         
-        console.log(events)
-        
+       // console.log(events)
+
         const cancelledEvents = events.filter(event => event.status === 'cancelled');
   
         if (events.length) {
