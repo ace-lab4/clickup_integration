@@ -243,6 +243,8 @@ app.post('/watchCalendar', async (req, res) => {
 app.post('/webhook', async (req, res) => {
   res.status(200).end();
 
+  console.log('recebendo evento')
+
   const resourceId = req.headers['x-goog-resource-id'];
 
   const query = 'SELECT access_token, token_refresh, calendar_id, email, user_id_clickup, token_clickup, initial_date FROM base WHERE resource_id = $1';
@@ -269,9 +271,9 @@ app.post('/webhook', async (req, res) => {
     const initial_date = result.rows[0].initial_date;
 
     const googleConfig = {
-      clientId: process.env.GOOGLE_CLIENT_ID, 
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,  
-      key: process.env.GOOGLE_API_KEY, 
+      clientId:'1068704478160-s12miv13jg9rvkp043b3o5rqp8sa3i67.apps.googleusercontent.com',
+      clientSecret: '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', 
+      apiKey: 'AIzaSyBWusB_45ahZtNE-7TJQR2hF0X9cz547rE',
     };
 
     const oAuth2Client = new google.auth.OAuth2(
@@ -298,6 +300,8 @@ app.post('/webhook', async (req, res) => {
       if (err) return console.log('Error: ' + err);
 
       const events = response.data.items;
+
+      console.log('events')
 
       const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
