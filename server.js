@@ -326,7 +326,9 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
 
     console.log('processando dados do evento - 2')
 
-    if (!event.description) {
+    const description = event.description;
+
+    if (!description) {
      // console.log(`Este evento não tem tem descrição ${eventId}. Pulando evento.`);
       continue;
     }
@@ -343,6 +345,9 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
         projectId = titleParts[1];
         listCustom = titleParts[2];
     }
+
+    console.log('processando dados do evento - event-data')
+
     const eventName = event.summary;
     const created = event.created;
     const status = event.status;
@@ -355,7 +360,8 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     const dueDate = event.end.date;
     const startDate = event.start.date;
     const recurringEventId  = event.recurringEventId;
-    const declinedGuests = event.attendees ? event.attendees.filter(attendee => attendee.responseStatus === 'declined') : [];    const startDateTimeBrasilia = moment(event.start.dateTime).tz('America/Sao_Paulo');
+    const declinedGuests = event.attendees ? event.attendees.filter(attendee => attendee.responseStatus === 'declined') : [];    
+    const startDateTimeBrasilia = moment(event.start.dateTime).tz('America/Sao_Paulo');
     const dueDateTimeBrasilia = moment(event.end.dateTime).tz('America/Sao_Paulo');
     const timeDifferenceInMilliseconds = dueDateTimeBrasilia.diff(startDateTimeBrasilia, 'milliseconds');
     const timeEstimateInt32 = Math.min(timeDifferenceInMilliseconds, 2147483647);
