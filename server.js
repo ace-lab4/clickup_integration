@@ -294,24 +294,23 @@ app.post('/webhook', async (req, res) => {
       singleEvents: true,
       orderBy: 'updated',
       showDeleted: true,
-      updatedMin: initial_date,
       auth: oAuth2Client, 
     }, async (err, response) => {
       if (err) return console.log('Error: ' + err);
 
       const calendar_updated = response.data.updated
 
-      console.log(calendar_updated)
-      
-      const events = response.data.items;
+     //  console.log(calendar_updated)
+
+      const data = response.data.items;
 
      // console.log(events)
 
       const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
-      if (events.length) {
-        await processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents);
-        console.log('processando evento', calendarId, resourceId)
+      if (data.length) {
+        await filterEvents(data, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents);
+        console.log('filtrando eventos', calendarId, resourceId)
       }
     });
   }
@@ -319,6 +318,36 @@ app.post('/webhook', async (req, res) => {
 
 const processingTasksMap = new Map();
 const activeRequests = new Set();
+
+async function filterEvents(data, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents) {
+  const events = [];
+
+  for (const event of data) {
+    const eventId = event.id;
+    const eventName = event.summary;
+    const description = event.description;
+    const recurringEventId = event.recurringEventId;
+    const created = event.created;
+
+    console.log('processando dados do evento - nome', eventName, 'data de criação', created);
+
+    // Condições de filtragem
+    if (recurringEventId || /lembre/i.test(eventName) || /lembrete/i.test(eventName) || /lunch/i.test(eventId) || new Date(created) < new Date(initial_date)) {
+      // Se qualquer uma das condições for verdadeira, pule para o próximo evento
+      console.log(`Excluindo evento - ID: ${eventId}, Nome: ${eventName}, Data de criação: ${created}`);
+      continue;
+    }
+
+    // Adicione o evento filtrado ao novo array
+    events.push(event);
+  }
+
+  // Agora você pode usar o array filtrado conforme necessário
+  console.log('Eventos filtrados:', events);
+
+  // Chame a função processEvents com o array filtrado
+  await processEvents(events, user_id_clickup, tokenClickup, email, calendarId,initial_date, cancelledEvents);
+}
 
 // função de processo de notificação e extração de dados para tarefa
 async function processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents) {
@@ -328,17 +357,9 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
   for (const event of events) {
     const eventId = event.id;
     const eventName = event.summary;
-
-    console.log('processando dados do evento - 2', eventName)
-
     const description = event.description;
 
-    if (!description) {
-     // console.log(`Este evento não tem tem descrição ${eventId}. Pulando evento.`);
-      continue;
-    }
-
-    console.log('processando dados do evento - event-data')
+    console.log('processando dados do evento - event - data')
 
     const titleParts = event.description ? event.description.split(' - ') : [];
     let spaceName, projectId, listCustom;
@@ -365,7 +386,6 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     const startDateTime = event.start.dateTime;
     const dueDate = event.end.date;
     const startDate = event.start.date;
-    const recurringEventId  = event.recurringEventId;
     const declinedGuests = event.attendees ? event.attendees.filter(attendee => attendee.responseStatus === 'declined') : [];    
     const startDateTimeBrasilia = moment(event.start.dateTime).tz('America/Sao_Paulo');
     const dueDateTimeBrasilia = moment(event.end.dateTime).tz('America/Sao_Paulo');
@@ -447,13 +467,6 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     }
 
     console.log('processando dados do evento - 4 ')
-
-    if (recurringEventId) {
-      console.log(`Evento é recorrente (recurringEventId: ${recurringEventId}), não será criada nenhuma tarefa.`);
-      return null;
-    }
-
-    console.log('processando dados do evento - 5 ')
 
     const eventExists = await checkEventExistence(eventId);
     const existingTask = await checkTaskExistence(eventId);
