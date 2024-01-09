@@ -288,13 +288,15 @@ app.post('/webhook', async (req, res) => {
 
     const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     calendar.events.list({
       calendarId: calendarId,
       singleEvents: true,
       orderBy: 'updated',
       showDeleted: true,
-      updatedMin:'2024-01-03T14:14:25.712Z',
+      updatedMin:today.toISOString(),
       auth: oAuth2Client, 
     }, async (err, response) => {
       if (err) return console.log('Error: ' + err);
@@ -443,7 +445,10 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     } else if (status === 'cancelled' && eventExists) {
       console.log('Evento cancelado, deletando a task.');
       await deleteTask(eventId);
-    } else if (eventExists){
+    } else if(!eventExists && status !== 'cancelled'){
+      await saveEvent(eventId, created, status, updated);
+      console.log('Evento salvo:', eventId, created, status, updated);
+    }else if (eventExists){
       console.log('Evento já existe, buscando atualização:', eventId);
       await checkEventChanges(eventId, updated);
       await updateTaskClickup(existingTask, eventData);
@@ -459,21 +464,18 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
         if (existingTaskId) {
           console.log(`Tarefa já criada para o evento ${eventId}.`);
           return null;
-        } else if (eventExists){
+        } else if (eventExists && status !== 'cancelled'){
 
           const createdTaskId = await createTaskClickup(eventData);
     
-          console.log(`Tarefa criada para o evento ${eventId}: ${createdTaskId}`);
+          console.log(`Tarefa criada para o evento ${eventId}: ${createdTaskId}, ${eventName}`);
           
           if (createdTaskId) {
             await updateEventWithTaskId(eventId, createdTaskId);
             console.log(`Tarefa atualizada para o evento ${eventId}: ${createdTaskId}`);
           }
         }
-        else if(!eventExists && status !== 'cancelled'){
-          await saveEvent(eventId, created, status, updated);
-          console.log('Evento salvo:', eventId, created, status, updated);
-        }
+
       } catch (error) {
         console.error(`Ocorreu um erro ao executar a tarefa: ${error}`);
       } finally {
