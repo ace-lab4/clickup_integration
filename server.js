@@ -346,8 +346,8 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     const date_limit = new Date(initial_date)
     const event_date = new Date(updated)
 
-    console.log('criado em:', event_date, 'data limite', date_limit)
-    if (date_limit < event_date) {
+   // console.log('atualizado em:', event_date, 'data limite', date_limit)
+    if (event_date < date_limit) {
       continue; 
     }
 
