@@ -304,6 +304,7 @@ app.post('/webhook', async (req, res) => {
       calendarId: calendarId,
       singleEvents: true,
       showDeleted: true,
+      orderBy: 'updated',
       updatedMin: initial_date,
       auth: oAuth2Client, 
     }, async (err, response) => {
@@ -447,11 +448,13 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
       await deleteTask(eventId);
     } else if (updated < initial_date) {
       console.log('Eveto não atende ao critério de data, não será salvo nem criado.');
-    } else {
+    } else if(eventExists) {
       console.log('Evento já existe, buscando atualização:', eventId);
       await checkEventChanges(eventId, updated);
       await updateTaskClickup(existingTask, eventData);
-    }    
+    } else {
+      console.log('passou aqui', eventName)
+    }  
     
     if (!processingTasksMap.has(eventId)) {
       processingTasksMap.set(eventId, true);
