@@ -196,7 +196,9 @@ app.post('/watchCalendar', async (req, res) => {
       },
     })
 
-    // console.log("expira em:", expirateData)
+    const created = watchResponse.data.created
+
+    console.log(created)
 
       console.log('Watch response for calendar', calendarId, ':', watchResponse.data);
       const resourceId = watchResponse.data.resourceId;
@@ -433,7 +435,10 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     const eventExists = await checkEventExistence(eventId);
     const existingTask = await checkTaskExistence(eventId);
     
-    if (created < initial_date) {
+    const due = new Date(eventData.created)
+    console.log('due:', due)
+
+    if (eventData.created < initial_date && eventData.status !== 'cancelled') {
       console.log(`Evento ${eventName} não atende ao critério de data, não será salvo nem criado.`);
     } else if (status === 'cancelled') {
       console.log('Evento cancelado, deletando a task.');
