@@ -299,6 +299,10 @@ app.post('/webhook', async (req, res) => {
     }, async (err, response) => {
       if (err) return console.log('Error: ' + err);
 
+      const calendar_updated = response.data.updated
+
+      console.log(calendar_updated)
+      
       const events = response.data.items;
 
      // console.log(events)
@@ -307,7 +311,7 @@ app.post('/webhook', async (req, res) => {
 
       if (events.length) {
         await processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents);
-        console.log('processando evento')
+        console.log('processando evento', calendarId, resourceId)
       }
     });
   }
@@ -319,7 +323,7 @@ const activeRequests = new Set();
 // função de processo de notificação e extração de dados para tarefa
 async function processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents) {
 
-  console.log('processando dados do evento')
+  console.log('processando dados do evento - 1')
 
   for (const event of events) {
     const eventId = event.id;
@@ -333,7 +337,7 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
      // console.log(`Este evento não tem tem descrição ${eventId}. Pulando evento.`);
       continue;
     }
-    
+
     console.log('processando dados do evento - event-data')
 
     const titleParts = event.description ? event.description.split(' - ') : [];
