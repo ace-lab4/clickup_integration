@@ -296,7 +296,7 @@ app.post('/webhook', async (req, res) => {
       singleEvents: true,
       orderBy: 'updated',
       showDeleted: true,
-      updatedMin:today.toISOString(),
+      timeMin: '2024-01-09T00:30:00',
       auth: oAuth2Client, 
     }, async (err, response) => {
       if (err) return console.log('Error: ' + err);
@@ -319,10 +319,7 @@ const activeRequests = new Set();
 async function processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents) {
   for (const event of events) {
     const eventId = event.id;
-    if (eventId.toLowerCase().includes('lunch')) {
-     // console.log(`O evento ${eventId} é do tipo 'lunch'. Pulando evento.`);
-      continue; // Pula para o próximo evento
-    }
+
     if (!event.description) {
      // console.log(`Este evento não tem tem descrição ${eventId}. Pulando evento.`);
       continue;
@@ -340,6 +337,9 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
         listCustom = titleParts[2];
     }
     const eventName = event.summary;
+    if (eventName.includes('teste de 2024')) {
+      console.log('encontrou');
+    }
     const created = event.created;
     const status = event.status;
     const updated = event.updated;
