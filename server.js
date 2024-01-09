@@ -343,8 +343,11 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
   for (const event of events) {
 
     const updated = event.updated;
-    // console.log('criado em:', updated)
-    if (updated < initial_date) {
+    const date_limit = new Date(initial_date)
+    const event_date = new Date(updated)
+
+    console.log('criado em:', event_date, 'data limite', date_limit)
+    if (date_limit < event_date) {
       continue; 
     }
 
@@ -467,8 +470,6 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     const eventExists = await checkEventExistence(eventId);
     const existingTask = await checkTaskExistence(eventId);
     
-    const date_limit = new Date(initial_date)
-    const event_date = new Date(created)
 
     if (event_date < date_limit && eventData.status !== 'cancelled') {
       console.log(`Evento ${eventName} não atende ao critério de data, não será salvo nem criado.`);
