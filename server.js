@@ -316,10 +316,23 @@ app.post('/webhook', async (req, res) => {
         auth: oAuth2Client,
       });
 
-      const events  = response.data.items
+      const data  = response.data.items
+      // console.log(data)
+      const events = [];
+  
+      const initialDate = new Date(initial_date);
+    
+      for (let i = 0; i < data.length; i++) {
+        const event = data[i];
+        const updatedDate = new Date(event.updated);
+    
+        // Verifica se a data de atualização é após ou no mesmo dia da initial_date
+        if (updatedDate >= initialDate) {
+          filteredEvents.push(event);
+        }
+      }
 
-      // console.log(events)
-
+      console.log(events)
       const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
       if (events.length > 0) {
@@ -346,12 +359,6 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     const updated = event.updated;
     const date_limit = new Date(initial_date)
     const eventName = event.summary;
-
-   // console.log('atualizado em:', event_date, 'data limite', date_limit)
-    if (date_limit > updated) {
-      console.log(`o evento ${eventName} não obedece ao requisito de data`)
-      continue; 
-    }
 
     const eventId = event.id;
     
