@@ -240,30 +240,6 @@ app.post('/watchCalendar', async (req, res) => {
   }
 });
 
-async function atualizar_due_date() {
-  let due_date = moment('2024-01-01'); 
-
-  function verificar_e_atualizar() {
-    const agora = moment();
-    const diferenca_dias = agora.diff(due_date, 'days');
-
-    if (diferenca_dias >= 31) {
-      console.log('Atualizando devido à passagem de 31 dias.');
-      due_date = agora;
-      due_date.add(1, 'months').startOf('month'); 
-    }
-
-    console.log('Data atual:', due_date.toISOString());
-
-    setTimeout(verificar_e_atualizar, 24 * 60 * 60 * 1000);
-  }
-
-  verificar_e_atualizar();
-
-  return () => due_date.toISOString();
-}
-
-// Rota para solicitações do webhook
 // Rota para solicitações do webhook
 app.post('/webhook', async (req, res) => {
   res.status(200).end();
@@ -284,9 +260,9 @@ app.post('/webhook', async (req, res) => {
     const initial_date = result.rows[0].initial_date;
 
     const googleConfig = {
-      clientId:'1068704478160-s12miv13jg9rvkp043b3o5rqp8sa3i67.apps.googleusercontent.com',
-      clientSecret: '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', 
-      apiKey: 'AIzaSyBWusB_45ahZtNE-7TJQR2hF0X9cz547rE',
+      clientId: process.env.GOOGLE_CLIENT_ID, 
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,  
+      key: process.env.GOOGLE_API_KEY, 
     };
 
     const oAuth2Client = new google.auth.OAuth2(
@@ -300,8 +276,6 @@ app.post('/webhook', async (req, res) => {
     });
 
     const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
-
-    const due_date = new DateTime(initial_date)
 
     calendar.events.list({
       calendarId: calendarId,
@@ -431,7 +405,7 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
 
     if (recurringEventId) {
       console.log(`Evento é recorrente (recurringEventId: ${recurringEventId}), não será criada nenhuma tarefa.`);
-      return null;
+      continue
     }
     
     const eventExists = await checkEventExistence(eventId);
