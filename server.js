@@ -243,8 +243,6 @@ app.post('/watchCalendar', async (req, res) => {
 app.post('/webhook', async (req, res) => {
   res.status(200).end();
 
-  console.log('recebendo evento')
-
   const resourceId = req.headers['x-goog-resource-id'];
 
   const query = 'SELECT access_token, token_refresh, calendar_id, email, user_id_clickup, token_clickup, initial_date FROM base WHERE resource_id = $1';
@@ -294,23 +292,17 @@ app.post('/webhook', async (req, res) => {
       singleEvents: true,
       orderBy: 'updated',
       showDeleted: true,
+      updatedMin: initial_date,
       auth: oAuth2Client, 
     }, async (err, response) => {
       if (err) return console.log('Error: ' + err);
 
-      const calendar_updated = response.data.updated
+      const events = response.data.items;
 
-     //  console.log(calendar_updated)
+      const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
-      const data = response.data.items;
-
-     // console.log(events)
-
-      const cancelledEvents = data.filter(event => event.status === 'cancelled');
-
-      if (data.length) {
-        await filterEvents(data, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents);
-        console.log('filtrando eventos', calendarId, resourceId)
+      if (events.length) {
+        await processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents);
       }
     });
   }
@@ -319,48 +311,18 @@ app.post('/webhook', async (req, res) => {
 const processingTasksMap = new Map();
 const activeRequests = new Set();
 
-async function filterEvents(data, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents) {
-  const events = [];
-
-  for (const event of data) {
-    const eventId = event.id;
-    const eventName = event.summary;
-    const description = event.description;
-    const recurringEventId = event.recurringEventId;
-    const created = event.created;
-
-    console.log('processando dados do evento - nome', eventName, 'data de criação', created);
-
-    // Condições de filtragem
-    if (recurringEventId || /lembre/i.test(eventName) || /lembrete/i.test(eventName) || /lunch/i.test(eventId) || new Date(created) < new Date(initial_date)) {
-      // Se qualquer uma das condições for verdadeira, pule para o próximo evento
-      console.log(`Excluindo evento - ID: ${eventId}, Nome: ${eventName}, Data de criação: ${created}`);
-      continue;
-    }
-
-    // Adicione o evento filtrado ao novo array
-    events.push(event);
-  }
-
-  // Agora você pode usar o array filtrado conforme necessário
-  console.log('Eventos filtrados:', events);
-
-  // Chame a função processEvents com o array filtrado
-  await processEvents(events, user_id_clickup, tokenClickup, email, calendarId,initial_date, cancelledEvents);
-}
-
 // função de processo de notificação e extração de dados para tarefa
 async function processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents) {
-
-  console.log('processando dados do evento - 1')
-
   for (const event of events) {
     const eventId = event.id;
-    const eventName = event.summary;
-    const description = event.description;
-
-    console.log('processando dados do evento - event - data')
-
+    if (eventId.toLowerCase().includes('lunch')) {
+     // console.log(`O evento ${eventId} é do tipo 'lunch'. Pulando evento.`);
+      continue; // Pula para o próximo evento
+    }
+    if (!event.description) {
+     // console.log(`Este evento não tem tem descrição ${eventId}. Pulando evento.`);
+      continue;
+    }
     const titleParts = event.description ? event.description.split(' - ') : [];
     let spaceName, projectId, listCustom;
     
@@ -373,9 +335,7 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
         projectId = titleParts[1];
         listCustom = titleParts[2];
     }
-
-    console.log('processando dados do evento - event-data')
-
+    const eventName = event.summary;
     const created = event.created;
     const status = event.status;
     const updated = event.updated;
@@ -386,8 +346,8 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     const startDateTime = event.start.dateTime;
     const dueDate = event.end.date;
     const startDate = event.start.date;
-    const declinedGuests = event.attendees ? event.attendees.filter(attendee => attendee.responseStatus === 'declined') : [];    
-    const startDateTimeBrasilia = moment(event.start.dateTime).tz('America/Sao_Paulo');
+    const recurringEventId  = event.recurringEventId;
+    const declinedGuests = event.attendees ? event.attendees.filter(attendee => attendee.responseStatus === 'declined') : [];    const startDateTimeBrasilia = moment(event.start.dateTime).tz('America/Sao_Paulo');
     const dueDateTimeBrasilia = moment(event.end.dateTime).tz('America/Sao_Paulo');
     const timeDifferenceInMilliseconds = dueDateTimeBrasilia.diff(startDateTimeBrasilia, 'milliseconds');
     const timeEstimateInt32 = Math.min(timeDifferenceInMilliseconds, 2147483647);
@@ -415,8 +375,6 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     };
     //console.log('time:', timeEstimateInt32)
     //console.log(declinedGuests);
-
-    console.log('processando dados do evento - 3 ', eventName)
 
     // buscar clickup Id 
     try {
@@ -466,19 +424,21 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
       console.error(`Error processing event with email "${email}": ${error.message}`);
     }
 
-    console.log('processando dados do evento - 4 ')
 
+    if (recurringEventId) {
+      console.log(`Evento é recorrente (recurringEventId: ${recurringEventId}), não será criada nenhuma tarefa.`);
+      return null;
+    }
+    
     const eventExists = await checkEventExistence(eventId);
     const existingTask = await checkTaskExistence(eventId);
-
-    console.log('processando evento  - pegando dados do evento:', eventName)
-
+    
     if (created < initial_date) {
       console.log(`Evento ${eventName} não atende ao critério de data, não será salvo nem criado.`);
-    } else if (status === 'cancelled' && eventExists) {
+    } else if (status === 'cancelled') {
       console.log('Evento cancelado, deletando a task.');
       await deleteTask(eventId);
-    } else if (!eventExists && eventData.status !== 'cancelled') {
+    } else if (!eventExists) {
       await saveEvent(eventId, created, status, updated);
       console.log('Evento salvo:', eventId, created, status, updated);
     } else {
