@@ -300,11 +300,9 @@ app.post('/webhook', async (req, res) => {
 
     const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
 
-
     calendar.events.list({
       calendarId: calendarId,
       singleEvents: true,
-      orderBy: 'updated',
       showDeleted: true,
       updatedMin: initial_date,
       auth: oAuth2Client, 
@@ -439,12 +437,12 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
 
     const due_date = new Date(initial_date)
 
-    console.log(due_date)
+    // console.log(due_date)
 
     if (!eventExists && eventData.status !== 'cancelled') {
       await saveEvent(eventId, created, status, updated);
       console.log('Evento salvo:', eventId, created, status, updated);
-    } else if (eventData.status === 'cancelled') {
+    } else if (eventData.status === 'cancelled' && eventExists) {
       console.log('Evento cancelado, deletando a task.');
       await deleteTask(eventId);
     } else if (updated < initial_date) {
