@@ -340,14 +340,18 @@ const activeRequests = new Set();
 
 // função de processo de notificação e extração de dados para tarefa
 async function processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents) {
-  for (const event of events) {
+  
+  const date_limit = new Date(initial_date)
+
+  const filtered_events = events.filter(event => event.updated >= date_limit)
+  for (const event of filtered_events) {
 
     const updated = event.updated;
-    const date_limit = new Date(initial_date)
-    const event_date = new Date(updated)
+    const eventName = event.summary;
 
    // console.log('atualizado em:', event_date, 'data limite', date_limit)
     if (updated < date_limit) {
+      console.log(`o evento ${eventName} não obedece ao requisito de data`)
       continue; 
     }
 
@@ -373,7 +377,6 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
         projectId = titleParts[1];
         listCustom = titleParts[2];
     }
-    const eventName = event.summary;
     const status = event.status;
     const guests = event.attendees ? event.attendees.filter(guest => guest.email.endsWith('goace.vc')) : [];
     const guestEmails = guests.map(guest => guest.email);
@@ -473,7 +476,7 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
 
     if (updated < date_limit && eventData.status !== 'cancelled') {
       console.log(`Evento ${eventName} não atende ao critério de data, não será salvo nem criado.`);
-      console.log(`A data do evento ${eventName} é ${event_date} e a data inicial da agenda é ${date_limit}`)
+      console.log(`A data do evento ${eventName} é ${updated} e a data inicial da agenda é ${date_limit}`)
     }else if (eventData.status === 'cancelled' && eventExists){
       await deleteTask(eventId);
       console.log(`O evento com ID ${eventId} e nome ${eventName} foi cancelado. Chamando a função para excluir a tarefa.`);
