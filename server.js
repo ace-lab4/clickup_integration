@@ -330,7 +330,7 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
   for (const event of events) {
     const eventId = event.id;
     if (!event.description) {
-      console.log(`Event description is missing for event ${eventId}. Skipping this event.`);
+     // console.log(`Event description is missing for event ${eventId}. Skipping this event.`);
       continue;
     }
     const titleParts = event.description ? event.description.split(' - ') : [];
@@ -434,10 +434,12 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     
     const eventExists = await checkEventExistence(eventId);
     const existingTask = await checkTaskExistence(eventId);
-    
-    if (updated < initial_date) {
+
+    const due_date = new Date(initial_date)
+
+    if (updated < due_date) {
       console.log('Evento não atende ao critério de data, não será salvo nem criado.');
-    } else if (status === 'cancelled') {
+    } else if (eventData.status === 'cancelled') {
       console.log('Evento cancelado, deletando a task.');
       await deleteTask(eventId);
     } else if (!eventExists) {
