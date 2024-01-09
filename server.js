@@ -304,6 +304,7 @@ app.post('/webhook', async (req, res) => {
     const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
 
     // const due_date = atualizar_due_date();
+    const initialDate = new Date(initial_date);
 
     // console.log(`a due_date é ${due_date}`)
 
@@ -312,27 +313,15 @@ app.post('/webhook', async (req, res) => {
         calendarId: calendarId,
         singleEvents: true,
         orderBy: 'updated',
+        updatedMin: initialDate,
         showDeleted: true,
         auth: oAuth2Client,
       });
 
-      const data  = response.data.items
-      // console.log(data)
-      const events = [];
-  
-      const initialDate = new Date(initial_date);
-    
-      for (let i = 0; i < data.length; i++) {
-        const event = data[i];
-        const updatedDate = new Date(event.updated);
-    
-        // Verifica se a data de atualização é após ou no mesmo dia da initial_date
-        if (updatedDate >= initialDate) {
-          filteredEvents.push(event);
-        }
-      }
+      const events  = response.data.items
 
-      console.log(events)
+      console.log(events)  
+
       const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
       if (events.length > 0) {
@@ -479,7 +468,7 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     const existingTask = await checkTaskExistence(eventId);
     
 
-    if (updated < date_limit && eventData.status !== 'cancelled') {
+    if (date_limit > updated && eventData.status !== 'cancelled') {
       console.log(`Evento ${eventName} não atende ao critério de data, não será salvo nem criado.`);
       console.log(`A data do evento ${eventName} é ${updated} e a data inicial da agenda é ${date_limit}`)
     }else if (eventData.status === 'cancelled' && eventExists){
