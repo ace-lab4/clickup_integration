@@ -324,7 +324,7 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
   for (const event of events) {
     const eventId = event.id;
 
-    console.log('processando dados do evento - 2', eventName)
+    console.log('processando dados do evento - 2')
 
     if (!event.description) {
      // console.log(`Este evento não tem tem descrição ${eventId}. Pulando evento.`);
@@ -384,7 +384,7 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     //console.log('time:', timeEstimateInt32)
     //console.log(declinedGuests);
 
-    console.log('processando dados do evento - 3 ')
+    console.log('processando dados do evento - 3 ', eventName)
 
     // buscar clickup Id 
     try {
