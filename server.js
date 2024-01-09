@@ -341,14 +341,13 @@ const activeRequests = new Set();
 // função de processo de notificação e extração de dados para tarefa
 async function processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents) {
   for (const event of events) {
-    const created = event.created;
-    const startDate = event.start.date;
-    const updated = event.updated;
 
-    console.log('criado em:', updated)
-    if (created < initial_date) {
+    const updated = event.updated;
+    // console.log('criado em:', updated)
+    if (updated < initial_date) {
       continue; 
     }
+
     const eventId = event.id;
     
     if (eventId.toLowerCase().includes('lunch')) {
@@ -384,6 +383,8 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     const dueDateTimeBrasilia = moment(event.end.dateTime).tz('America/Sao_Paulo');
     const timeDifferenceInMilliseconds = dueDateTimeBrasilia.diff(startDateTimeBrasilia, 'milliseconds');
     const timeEstimateInt32 = Math.min(timeDifferenceInMilliseconds, 2147483647);
+    const created = event.created;
+    const startDate = event.start.date;
 
     const eventData = {
       folderName: projectId,
