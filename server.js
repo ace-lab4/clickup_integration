@@ -435,15 +435,15 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     const eventExists = await checkEventExistence(eventId);
     const existingTask = await checkTaskExistence(eventId);
     
-    const due = new Date(eventData.created)
-    console.log('due:', due)
+
+    console.log('due:', eventData.created)
 
     if (eventData.created < initial_date && eventData.status !== 'cancelled') {
       console.log(`Evento ${eventName} não atende ao critério de data, não será salvo nem criado.`);
-    } else if (status === 'cancelled') {
+    } else if (status === 'cancelled' && !eventExists) {
       console.log('Evento cancelado, deletando a task.');
       await deleteTask(eventId);
-    } else if (!eventExists) {
+    } else if (!eventExists && eventData.created >= initial_date) {
       await saveEvent(eventId, created, status, updated);
       console.log('Evento salvo:', eventId, created, status, updated);
     } else {
