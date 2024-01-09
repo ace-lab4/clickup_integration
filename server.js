@@ -11,6 +11,7 @@ const moment = require('moment-timezone');
 const momentRegular = require('moment');
 const dotenv = require('dotenv');
 const { isNull } = require('util');
+const { DateTime } = require('luxon');
 dotenv.config();
 
 // Configuração do banco de dados PostgreSQL
@@ -300,19 +301,19 @@ app.post('/webhook', async (req, res) => {
 
     const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
 
+    const due_date = new DateTime(initial_date)
+
     calendar.events.list({
       calendarId: calendarId,
       singleEvents: true,
       showDeleted: true,
-      orderBy: 'updated',
-      timeMin: initial_date,
       auth: oAuth2Client, 
     }, async (err, response) => {
       if (err) return console.log('Error: ' + err);
 
       const events = response.data.items;
 
-      console.log(events)
+      // console.log(events)
 
       const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
