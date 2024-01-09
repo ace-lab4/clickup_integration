@@ -295,7 +295,7 @@ app.post('/webhook', async (req, res) => {
       singleEvents: true,
       orderBy: 'updated',
       showDeleted: true,
-      updatedMin: '2024-01-01T00:30:00',
+      updatedMin: '2024-01-01T00:30:00Z',
       auth: oAuth2Client, 
     }, async (err, response) => {
       if (err) return console.log('Error: ' + err);
