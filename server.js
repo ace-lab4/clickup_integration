@@ -313,6 +313,8 @@ app.post('/webhook', async (req, res) => {
 
       const events = response.data.items;
 
+      //console.log(events)
+
       const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
       if (events.length) {
@@ -437,9 +439,9 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
 
     const due_date = new Date(initial_date)
 
-    console.log(dueDate)
+    console.log(due_date)
 
-    if (updated > initial_date && !eventExists) {
+    if (!eventExists && eventData.status !== 'cancelled') {
       await saveEvent(eventId, created, status, updated);
       console.log('Evento salvo:', eventId, created, status, updated);
     } else if (eventData.status === 'cancelled') {
@@ -447,7 +449,6 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
       await deleteTask(eventId);
     } else if (updated < initial_date) {
       console.log('Eveto não atende ao critério de data, não será salvo nem criado.');
-
     } else {
       console.log('Evento já existe, buscando atualização:', eventId);
       await checkEventChanges(eventId, updated);
@@ -506,8 +507,8 @@ async function createTaskClickup(eventData, eventExists) {
 
 
   if (status === 'cancelled') {
-    console.log(`O evento com ID ${eventId} e nome ${name} foi cancelado.`);
-    return null; // Ou outra lógica de retorno, dependendo do seu caso
+   // console.log(`O evento com ID ${eventId} e nome ${name} foi cancelado.`);
+    return null; 
   }
 
 
@@ -593,7 +594,7 @@ async function updateTaskClickup(existingTask,eventExists, eventData, taskId) {
 
 
   if (status === 'cancelled' && eventExists) {
-    console.log(`O evento com ID ${eventId} e nome ${name} foi cancelado.`);
+    // console.log(`O evento com ID ${eventId} e nome ${name} foi cancelado.`);
     return null;
   }
 
