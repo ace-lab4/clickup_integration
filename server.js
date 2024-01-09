@@ -288,15 +288,14 @@ app.post('/webhook', async (req, res) => {
 
     const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+
 
     calendar.events.list({
       calendarId: calendarId,
       singleEvents: true,
       orderBy: 'updated',
       showDeleted: true,
-      timeMin: '2024-01-09T00:30:00',
+      updatedMin: '2024-01-01T00:30:00',
       auth: oAuth2Client, 
     }, async (err, response) => {
       if (err) return console.log('Error: ' + err);
