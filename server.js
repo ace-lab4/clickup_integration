@@ -309,24 +309,26 @@ app.post('/webhook', async (req, res) => {
     // console.log(`a due_date é ${due_date}`)
 
     try {
-      const response = await calendar.events.list({
+      calendar.events.list({
         calendarId: calendarId,
         singleEvents: true,
         orderBy: 'updated',
         updatedMin: initial_date,
         showDeleted: true,
         auth: oAuth2Client,
+      }, async (err, response) => {
+       // if (err) return console.log('Error: ' + err);
+  
+        const events = response.data.items;
+        
+        console.log(events)
+        
+        const cancelledEvents = events.filter(event => event.status === 'cancelled');
+  
+        if (events.length) {
+          await processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents);
+        }
       });
-
-      const events  = response.data.items
-
-      //console.log(events)  
-
-      const cancelledEvents = events.filter(event => event.status === 'cancelled');
-
-      if (events.length > 0) {
-        await processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents);
-      }
     } catch (error) {
       console.error('Error in fetching or processing events:', error.message || error);
     }
