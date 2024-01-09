@@ -305,7 +305,8 @@ app.post('/webhook', async (req, res) => {
       singleEvents: true,
       showDeleted: true,
       orderBy: 'updated',
-      updatedMin: initial_date,
+      timeMin: initial_date,
+      timeMax: '2024-12-25T10:00:00Z',
       auth: oAuth2Client, 
     }, async (err, response) => {
       if (err) return console.log('Error: ' + err);
