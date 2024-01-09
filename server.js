@@ -443,7 +443,7 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     } else if (status === 'cancelled' && eventExists) {
       console.log('Evento cancelado, deletando a task.');
       await deleteTask(eventId);
-    } else if (!eventExists && updated >= initial_date) {
+    } else if (!eventExists && eventData.status !== 'cancelled') {
       await saveEvent(eventId, created, status, updated);
       console.log('Evento salvo:', eventId, created, status, updated);
     } else if (eventExists){
@@ -451,8 +451,8 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
       await checkEventChanges(eventId, updated);
       await updateTaskClickup(existingTask, eventData);
     }    
-    
-    if (!processingTasksMap.has(eventId) && status !== 'cancelled') {
+  
+    if (!processingTasksMap.has(eventId)) {
       processingTasksMap.set(eventId, true);
     
       try {
