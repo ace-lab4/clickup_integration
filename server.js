@@ -8,10 +8,8 @@ const fetch = require('node-fetch');
 const querystring = require('querystring');
 const cors = require('cors');
 const moment = require('moment-timezone');
-const momentRegular = require('moment');
 const dotenv = require('dotenv');
 const { isNull } = require('util');
-const { DateTime } = require('luxon');
 dotenv.config();
 
 // Configuração do banco de dados PostgreSQL
@@ -240,6 +238,7 @@ app.post('/watchCalendar', async (req, res) => {
   }
 });
 
+
 // Rota para solicitações do webhook
 app.post('/webhook', async (req, res) => {
   res.status(200).end();
@@ -248,9 +247,19 @@ app.post('/webhook', async (req, res) => {
 
   const query = 'SELECT access_token, token_refresh, calendar_id, email, user_id_clickup, token_clickup, initial_date FROM base WHERE resource_id = $1';
   const values = [resourceId];
-  const result = await pool.query(query, values);
 
-  if (result.rows.length > 0) {
+  let result;
+
+  try {
+    result = await pool.query(query, values);
+    // Process the result
+   // console.log(result);
+  } catch (error) {
+    // Handle the error
+    console.error('Error executing query:', error);
+  }
+
+  if (result && result.rows.length > 0) {
     const accessToken = result.rows[0].access_token;
     const refreshToken = result.rows[0].token_refresh;
     const calendarId = result.rows[0].calendar_id;
@@ -277,17 +286,18 @@ app.post('/webhook', async (req, res) => {
 
     const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
 
+
     calendar.events.list({
       calendarId: calendarId,
       singleEvents: true,
+      orderBy: 'updated',
       showDeleted: true,
+      updatedMin: initial_date,
       auth: oAuth2Client, 
     }, async (err, response) => {
       if (err) return console.log('Error: ' + err);
 
       const events = response.data.items;
-
-      // console.log(events)
 
       const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
@@ -305,15 +315,27 @@ const activeRequests = new Set();
 async function processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents) {
   for (const event of events) {
     const eventId = event.id;
+    if (eventId.toLowerCase().includes('lunch')) {
+     // console.log(`O evento ${eventId} é do tipo 'lunch'. Pulando evento.`);
+      continue; // Pula para o próximo evento
+    }
     if (!event.description) {
-     // console.log(`Event description is missing for event ${eventId}. Skipping this event.`);
+     // console.log(`Este evento não tem tem descrição ${eventId}. Pulando evento.`);
       continue;
     }
     const titleParts = event.description ? event.description.split(' - ') : [];
+    let spaceName, projectId, listCustom;
+    
+    if (titleParts.length > 3) {
+      spaceName = titleParts[0];
+      projectId = titleParts.slice(1, 3).join(' - ');
+      listCustom = titleParts.slice(3).join(' - ');
+    } else {
+        spaceName = titleParts[0];
+        projectId = titleParts[1];
+        listCustom = titleParts[2];
+    }
     const eventName = event.summary;
-    const spaceName = titleParts[0];
-    const projectId = titleParts[1];
-    const listCustom = titleParts[2];
     const created = event.created;
     const status = event.status;
     const updated = event.updated;
@@ -405,33 +427,27 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
 
     if (recurringEventId) {
       console.log(`Evento é recorrente (recurringEventId: ${recurringEventId}), não será criada nenhuma tarefa.`);
-      continue
+      return null;
     }
     
     const eventExists = await checkEventExistence(eventId);
     const existingTask = await checkTaskExistence(eventId);
-
-    const due_date = new Date(initial_date)
-
-    // console.log(due_date)
-
-    if (!eventExists && eventData.status !== 'cancelled') {
-      await saveEvent(eventId, created, status, updated);
-      console.log('Evento salvo:', eventId, created, status, updated);
-    } else if (eventData.status === 'cancelled' && eventExists) {
+    
+    if (created < initial_date) {
+      console.log(`Evento ${eventName} não atende ao critério de data, não será salvo nem criado.`);
+    } else if (status === 'cancelled') {
       console.log('Evento cancelado, deletando a task.');
       await deleteTask(eventId);
-    } else if (updated < initial_date) {
-      console.log('Eveto não atende ao critério de data, não será salvo nem criado.');
-    } else if(eventExists) {
+    } else if (!eventExists) {
+      await saveEvent(eventId, created, status, updated);
+      console.log('Evento salvo:', eventId, created, status, updated);
+    } else {
       console.log('Evento já existe, buscando atualização:', eventId);
       await checkEventChanges(eventId, updated);
       await updateTaskClickup(existingTask, eventData);
-    } else {
-      console.log('passou aqui', eventName)
-    }  
+    }    
     
-    if (!processingTasksMap.has(eventId)) {
+    if (!processingTasksMap.has(eventId) && status !== 'cancelled') {
       processingTasksMap.set(eventId, true);
     
       try {
@@ -457,10 +473,12 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
       }
     }
   }}
+
+
 // Funções para criação e manipulação da agenda e clickup
 
-// Criação de task
-async function createTaskClickup(eventData, eventExists) {
+//Criação de task
+async function createTaskClickup(eventData) {
   const { folderName, spaceName, eventId, hasGoaceVcGuests, eventOwnerClickupId,
   attendeesClickupIds, name, recurringEventId, tokenClickup, attendees, listCustom, timeEstimate, dueDate, startDate, status } = eventData;
 
@@ -483,8 +501,9 @@ async function createTaskClickup(eventData, eventExists) {
 
 
   if (status === 'cancelled') {
-   // console.log(`O evento com ID ${eventId} e nome ${name} foi cancelado.`);
-    return null; 
+    console.log(`O evento com ID ${eventId} foi cancelado. Chamando a função para excluir a tarefa.`);
+    await deleteTask(eventId);
+    return null; // Ou outra lógica de retorno, dependendo do seu caso
   }
 
 
@@ -548,7 +567,7 @@ async function createTaskClickup(eventData, eventExists) {
 }
 
 // atualização de tarefas no clickup
-async function updateTaskClickup(existingTask,eventExists, eventData, taskId) {
+async function updateTaskClickup(taskId, eventData) {
   const {hasGoaceVcGuests,eventOwnerClickupId, attendeesClickupIds, name, recurringEventId, tokenClickup, declinedAttendees, timeEstimate, dueDate, startDate, status, eventId} = eventData;
 
   const isAllDayEvent = !eventData.dueDateTime && !eventData.startDateTime;
@@ -569,10 +588,11 @@ async function updateTaskClickup(existingTask,eventExists, eventData, taskId) {
   }
 
 
-  if (status === 'cancelled' && eventExists) {
-    // console.log(`O evento com ID ${eventId} e nome ${name} foi cancelado.`);
-    return null;
-  }
+  if (status === 'cancelled') {
+    console.log(`O evento com ID ${eventId} foi cancelado. Chamando a função para excluir a tarefa.`);
+    await deleteTask(eventId);
+    return null  }
+
 
   try {
 
@@ -609,12 +629,12 @@ async function updateTaskClickup(existingTask,eventExists, eventData, taskId) {
 
     if (resp.ok) {
       console.log(`Tarefa atualizada com sucesso: ${taskId}`);
-    } else if (resp.error){
+    } else {
       const errorMessage = await resp.text();
-      console.error(`Erro ao atualizar tarefa ${taskId} nome ${name}: ${errorMessage}`);
+      console.error(`Erro ao atualizar tarefa ${taskId}: ${errorMessage}`);
     }
   } catch (error) {
-    console.error(`Erro ao atualizar tarefa ${taskId} nome ${name}: ${error.message}`);
+    console.error(`Erro ao atualizar tarefa ${taskId}: ${error.message}`);
   }
 }
 
@@ -1060,4 +1080,3 @@ app.listen(port, () => {
   console.log(`Servidor iniciado em https://integracao-cc.onrender.com/`);
 })
  */
-
