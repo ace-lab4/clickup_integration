@@ -301,12 +301,13 @@ app.post('/webhook', async (req, res) => {
 
       const events = response.data.items;
 
-      console.log('events')
+      console.log(events)
 
       const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
       if (events.length) {
         await processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents);
+        console.log('processando evento')
       }
     });
   }
@@ -436,13 +437,15 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     
     const eventExists = await checkEventExistence(eventId);
     const existingTask = await checkTaskExistence(eventId);
-    
+
+    console.log('processando evento  - pegando dados do evento:', eventName)
+
     if (created < initial_date) {
       console.log(`Evento ${eventName} não atende ao critério de data, não será salvo nem criado.`);
-    } else if (status === 'cancelled') {
+    } else if (status === 'cancelled' && eventExists) {
       console.log('Evento cancelado, deletando a task.');
       await deleteTask(eventId);
-    } else if (!eventExists) {
+    } else if (!eventExists && eventData.status !== 'cancelled') {
       await saveEvent(eventId, created, status, updated);
       console.log('Evento salvo:', eventId, created, status, updated);
     } else {
