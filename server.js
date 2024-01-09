@@ -323,8 +323,9 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
 
   for (const event of events) {
     const eventId = event.id;
+    const eventName = event.summary;
 
-    console.log('processando dados do evento - 2')
+    console.log('processando dados do evento - 2', eventName)
 
     const description = event.description;
 
@@ -332,6 +333,8 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
      // console.log(`Este evento não tem tem descrição ${eventId}. Pulando evento.`);
       continue;
     }
+    
+    console.log('processando dados do evento - event-data')
 
     const titleParts = event.description ? event.description.split(' - ') : [];
     let spaceName, projectId, listCustom;
@@ -348,7 +351,6 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
 
     console.log('processando dados do evento - event-data')
 
-    const eventName = event.summary;
     const created = event.created;
     const status = event.status;
     const updated = event.updated;
