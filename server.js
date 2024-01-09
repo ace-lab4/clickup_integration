@@ -294,7 +294,6 @@ app.post('/webhook', async (req, res) => {
       singleEvents: true,
       orderBy: 'updated',
       showDeleted: true,
-      updatedMin: initial_date,
       auth: oAuth2Client, 
     }, async (err, response) => {
       if (err) return console.log('Error: ' + err);
@@ -438,14 +437,11 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
 
     // console.log('updated:', updated, eventName)
 
-    if (updated < initial_date && eventData.status !== 'cancelled') {
+    if (initial_date > updated && eventData.status !== 'cancelled') {
       console.log(`Evento ${eventName} não atende ao critério de data, não será salvo nem criado.`);
     } else if (status === 'cancelled' && eventExists) {
       console.log('Evento cancelado, deletando a task.');
       await deleteTask(eventId);
-    } else if (!eventExists && eventData.status !== 'cancelled') {
-      await saveEvent(eventId, created, status, updated);
-      console.log('Evento salvo:', eventId, created, status, updated);
     } else if (eventExists){
       console.log('Evento já existe, buscando atualização:', eventId);
       await checkEventChanges(eventId, updated);
@@ -457,19 +453,25 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     
       try {
         const existingTaskId = await checkTaskExistence(eventId);
-    
+        const eventExists = await checkEventExistence(eventId);
+
         if (existingTaskId) {
           console.log(`Tarefa já criada para o evento ${eventId}.`);
           return null;
-        } else {
+        } else if (eventExists){
+
           const createdTaskId = await createTaskClickup(eventData);
     
           console.log(`Tarefa criada para o evento ${eventId}: ${createdTaskId}`);
-    
+          
           if (createdTaskId) {
             await updateEventWithTaskId(eventId, createdTaskId);
             console.log(`Tarefa atualizada para o evento ${eventId}: ${createdTaskId}`);
           }
+        }
+        else if(!eventExists && status !== 'cancelled'){
+          await saveEvent(eventId, created, status, updated);
+          console.log('Evento salvo:', eventId, created, status, updated);
         }
       } catch (error) {
         console.error(`Ocorreu um erro ao executar a tarefa: ${error}`);
