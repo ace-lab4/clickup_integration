@@ -341,16 +341,14 @@ const activeRequests = new Set();
 // função de processo de notificação e extração de dados para tarefa
 async function processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents) {
   
-  const date_limit = new Date(initial_date)
-
-  const filtered_events = events.filter(event => event.updated >= date_limit)
-  for (const event of filtered_events) {
+  for (const event of events) {
 
     const updated = event.updated;
+    const date_limit = new Date(initial_date)
     const eventName = event.summary;
 
    // console.log('atualizado em:', event_date, 'data limite', date_limit)
-    if (updated < date_limit) {
+    if (date_limit > updated) {
       console.log(`o evento ${eventName} não obedece ao requisito de data`)
       continue; 
     }
