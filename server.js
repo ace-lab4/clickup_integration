@@ -323,14 +323,14 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
 
   for (const event of events) {
     const eventId = event.id;
-    if (eventId.toLowerCase().includes('lunch')) {
-     // console.log(`O evento ${eventId} é do tipo 'lunch'. Pulando evento.`);
-      continue; // Pula para o próximo evento
-    }
+
+    console.log('processando dados do evento - 2', eventName)
+
     if (!event.description) {
      // console.log(`Este evento não tem tem descrição ${eventId}. Pulando evento.`);
       continue;
     }
+
     const titleParts = event.description ? event.description.split(' - ') : [];
     let spaceName, projectId, listCustom;
     
@@ -384,6 +384,8 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     //console.log('time:', timeEstimateInt32)
     //console.log(declinedGuests);
 
+    console.log('processando dados do evento - 3 ')
+
     // buscar clickup Id 
     try {
       if (!activeRequests.has(email)) {
@@ -432,12 +434,15 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
       console.error(`Error processing event with email "${email}": ${error.message}`);
     }
 
+    console.log('processando dados do evento - 4 ')
 
     if (recurringEventId) {
       console.log(`Evento é recorrente (recurringEventId: ${recurringEventId}), não será criada nenhuma tarefa.`);
       return null;
     }
-    
+
+    console.log('processando dados do evento - 5 ')
+
     const eventExists = await checkEventExistence(eventId);
     const existingTask = await checkTaskExistence(eventId);
 
