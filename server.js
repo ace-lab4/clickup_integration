@@ -301,7 +301,7 @@ app.post('/webhook', async (req, res) => {
 
       const events = response.data.items;
 
-      console.log(events)
+     // console.log(events)
 
       const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
@@ -318,6 +318,9 @@ const activeRequests = new Set();
 
 // função de processo de notificação e extração de dados para tarefa
 async function processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents) {
+
+  console.log('processando dados do evento')
+
   for (const event of events) {
     const eventId = event.id;
     if (eventId.toLowerCase().includes('lunch')) {
