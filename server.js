@@ -304,9 +304,9 @@ app.post('/webhook', async (req, res) => {
 
       const array = events.filter(event => event.updated)
       
-      console.log(array)
+      //console.log(array)
 
-      console.log(new Date())
+      console.log('data de hoje',new Date())
 
       const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
