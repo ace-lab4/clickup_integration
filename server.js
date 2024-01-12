@@ -296,7 +296,7 @@ app.post('/webhook', async (req, res) => {
 
     const initial_date = formated_date.toISO()
 
-    console.log('data inicial do filtro:', initial_date);
+    // console.log('data inicial do filtro:', initial_date);
 
     calendar.events.list({
       calendarId: calendarId,
@@ -312,8 +312,6 @@ app.post('/webhook', async (req, res) => {
 
       
       //console.log(events)
-
-      console.log('data de hoje',new Date())
 
       const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
