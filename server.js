@@ -296,7 +296,7 @@ app.post('/webhook', async (req, res) => {
 
     const initial_date = formated_date.toISO()
 
-    // console.log(initial_date);
+    console.log('data inicial do filtro:', initial_date);
 
     calendar.events.list({
       calendarId: calendarId,
@@ -452,7 +452,9 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
 
     // console.log('updated:', updated, eventName)
 
-    if (status === 'cancelled' && eventExists) {
+    if( updated < initial_date && status !== 'cancelled'){
+        console.log(`Evento ${eventName} não possui data de atualização correta`)
+    } else if (status === 'cancelled' && eventExists) {
       console.log('Evento cancelado, deletando a task.');
       await deleteTask(eventId);
     } else if(!eventExists && status !== 'cancelled'){
@@ -476,12 +478,12 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
           return null;
         } else if (eventExists){
 
-          const createdTaskId = await createTaskClickup(eventData);
+          const createdTaskId = await createTaskClickup(eventData, eventExists);
     
           console.log(`Tarefa criada para o evento ${eventId}: ${createdTaskId}, ${eventName}`);
           
           if (createdTaskId) {
-            await updateEventWithTaskId(eventId, createdTaskId);
+            await updateEventWithTaskId(eventId, createdTaskId, eventExists);
             console.log(`Tarefa atualizada para o evento ${eventId}: ${createdTaskId}`);
           }
         }
@@ -501,7 +503,7 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
 // Funções para criação e manipulação da agenda e clickup
 
 //Criação de task
-async function createTaskClickup(eventData) {
+async function createTaskClickup(eventData, eventExists) {
   const { folderName, spaceName, eventId, hasGoaceVcGuests, eventOwnerClickupId,
   attendeesClickupIds, name, recurringEventId, tokenClickup, attendees, listCustom, timeEstimate, dueDate, startDate, status } = eventData;
 
@@ -521,14 +523,6 @@ async function createTaskClickup(eventData) {
     console.log(`Evento é recorrente (recurringEventId: ${recurringEventId}), não será criada nenhuma tarefa.`);
     return null;
   }
-
-
-  if (status === 'cancelled') {
-    console.log(`O evento com ID ${eventId} foi cancelado. Chamando a função para excluir a tarefa.`);
-    await deleteTask(eventId);
-    return null; // Ou outra lógica de retorno, dependendo do seu caso
-  }
-
 
   try {
 
