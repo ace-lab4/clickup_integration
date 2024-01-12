@@ -296,13 +296,13 @@ app.post('/webhook', async (req, res) => {
     
     const initial_date = formated_date.toUTC().toISO();
 
-   console.log('data inicial do filtro:', initial_date);
+   //console.log('data inicial do filtro:', initial_date);
 
     calendar.events.list({
       calendarId: calendarId,
       singleEvents: true,
       orderBy: 'updated',
-      q: '##',
+      q: 'INTCC',
       showDeleted: true,
       updatedMin: initial_date,
       auth: oAuth2Client, 
@@ -331,9 +331,14 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
   for (const event of events) {
     const eventId = event.id;
     const eventName = event.summary;
+    const recurringEventId  = event.recurringEventId;
 
+    if (recurringEventId) {
+      // console.log(`Evento é recorrente (recurringEventId: ${recurringEventId}), não será criada nenhuma tarefa.`);
+      return null;
+    }
     if (!event.description) {
-      console.log(`Este evento não tem tem descrição ${eventId} com nome ${eventName}. Pulando evento.`);
+      // console.log(`Este evento não tem tem descrição ${eventId} com nome ${eventName}. Pulando evento.`);
       continue;
     }
     const titleParts = event.description ? event.description.split(' - ') : [];
@@ -358,7 +363,6 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     const startDateTime = event.start.dateTime;
     const dueDate = event.end.date;
     const startDate = event.start.date;
-    const recurringEventId  = event.recurringEventId;
     const declinedGuests = event.attendees ? event.attendees.filter(attendee => attendee.responseStatus === 'declined') : [];    const startDateTimeBrasilia = moment(event.start.dateTime).tz('America/Sao_Paulo');
     const dueDateTimeBrasilia = moment(event.end.dateTime).tz('America/Sao_Paulo');
     const timeDifferenceInMilliseconds = dueDateTimeBrasilia.diff(startDateTimeBrasilia, 'milliseconds');
@@ -437,11 +441,6 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     }
 
 
-    if (recurringEventId) {
-      console.log(`Evento é recorrente (recurringEventId: ${recurringEventId}), não será criada nenhuma tarefa.`);
-      return null;
-    }
-    
     const eventExists = await checkEventExistence(eventId);
     const existingTask = await checkTaskExistence(eventId);
     
