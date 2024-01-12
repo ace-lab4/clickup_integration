@@ -294,9 +294,9 @@ app.post('/webhook', async (req, res) => {
     
     const formated_date = DateTime.fromJSDate(start_date, { zone: 'America/Sao_Paulo' });
     
-    const initial_date = formated_date.set({ hour: 0, minute: 0, second: 0, millisecond: 0 }).toUTC().toISO();
+    const initial_date = formated_date.toUTC().toISO();
 
-    console.log('data inicial do filtro:', initial_date);
+   // console.log('data inicial do filtro:', initial_date);
 
     calendar.events.list({
       calendarId: calendarId,
@@ -448,9 +448,9 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     const existingTask = await checkTaskExistence(eventId);
     
 
-    // console.log('updated:', updated, eventName)
+    console.log('updated:', updated, eventName, initial_date)
 
-    if( updated < initial_date && status !== 'cancelled'){
+    if( initial_date > updated && status !== 'cancelled'){
         console.log(`Evento ${eventName} não possui data de atualização correta`)
     } else if (status === 'cancelled' && eventExists) {
       console.log('Evento cancelado, deletando a task.');
