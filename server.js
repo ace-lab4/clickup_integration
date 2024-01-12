@@ -302,6 +302,7 @@ app.post('/webhook', async (req, res) => {
       calendarId: calendarId,
       singleEvents: true,
       orderBy: 'updated',
+      q: '#cc',
       timeZone: 'America/Sao_Paulo',
       showDeleted: true,
       updatedMin: initial_date,
