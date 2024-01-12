@@ -311,7 +311,7 @@ app.post('/webhook', async (req, res) => {
       const events = response.data.items;
 
       
-      //console.log(events)
+      console.log(events)
 
       const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
@@ -329,9 +329,10 @@ const activeRequests = new Set();
 async function processEvents(events, user_id_clickup, tokenClickup, email, calendarId, initial_date, cancelledEvents) {
   for (const event of events) {
     const eventId = event.id;
+    const eventName = event.summary;
 
     if (!event.description) {
-     // console.log(`Este evento não tem tem descrição ${eventId}. Pulando evento.`);
+      console.log(`Este evento não tem tem descrição ${eventId} com nome ${eventName}. Pulando evento.`);
       continue;
     }
     const titleParts = event.description ? event.description.split(' - ') : [];
@@ -345,10 +346,6 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
         spaceName = titleParts[0];
         projectId = titleParts[1];
         listCustom = titleParts[2];
-    }
-    const eventName = event.summary;
-    if (eventName.includes('teste de 2024')) {
-      console.log('encontrou');
     }
     const created = event.created;
     const status = event.status;
