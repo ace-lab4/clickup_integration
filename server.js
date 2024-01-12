@@ -343,16 +343,20 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
       continue;
     }
     const titleParts = event.description ? event.description.split(' - ') : [];
-    let spaceName, projectId, listCustom;
-    
-    if (titleParts.length > 3) {
-      spaceName = titleParts[0];
-      projectId = titleParts.slice(1, 3).join(' - ');
-      listCustom = titleParts.slice(3).join(' - ');
+    let type, spaceName, projectId, listCustom;
+
+    if (titleParts.length >= 4) {
+      type = titleParts[0]; 
+      spaceName = titleParts[1]; 
+      projectId = titleParts.slice(2, 4).join(' - '); 
+      listCustom = titleParts.slice(4).join(' - '); 
+    } else if (titleParts.length === 3) {
+      type = titleParts[0]; 
+      spaceName = titleParts[1]; 
+      projectId = titleParts[2]; 
+      listCustom = titleParts[3];
     } else {
-        spaceName = titleParts[0];
-        projectId = titleParts[1];
-        listCustom = titleParts[2];
+      console.error('Formato de entrada inválido.');
     }
     const created = event.created;
     const status = event.status;
@@ -640,10 +644,7 @@ async function updateTaskClickup(taskId, eventData) {
 
     if (resp.ok) {
       console.log(`Tarefa atualizada com sucesso: ${taskId}`);
-    } else {
-      const errorMessage = await resp.text();
-      console.error(`Erro ao atualizar tarefa ${taskId}: ${errorMessage}`);
-    }
+    } 
   } catch (error) {
     console.error(`Erro ao atualizar tarefa ${taskId}: ${error.message}`);
   }
