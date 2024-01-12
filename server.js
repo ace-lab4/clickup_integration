@@ -291,12 +291,12 @@ app.post('/webhook', async (req, res) => {
     const date = new Date();
 
     const start_date = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
-
+    
     const formated_date = DateTime.fromJSDate(start_date, { zone: 'America/Sao_Paulo' });
+    
+    const initial_date = formated_date.set({ hour: 0, minute: 0, second: 0, millisecond: 0 }).toUTC().toISO();
 
-    const initial_date = formated_date.toISO()
-
-    // console.log('data inicial do filtro:', initial_date);
+    console.log('data inicial do filtro:', initial_date);
 
     calendar.events.list({
       calendarId: calendarId,
