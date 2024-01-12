@@ -8,6 +8,7 @@ const fetch = require('node-fetch');
 const querystring = require('querystring');
 const cors = require('cors');
 const moment = require('moment-timezone');
+const { DateTime } = require("luxon");
 const dotenv = require('dotenv');
 const { isNull } = require('util');
 dotenv.config();
@@ -268,7 +269,6 @@ app.post('/webhook', async (req, res) => {
     const user_id_clickup = result.rows[0].user_id_clickup;
     const tokenClickup = result.rows[0].token_clickup;
     const email = result.rows[0].email;
-    const initial_date = result.rows[0].initial_date;
 
     const googleConfig = {
       clientId:'1068704478160-s12miv13jg9rvkp043b3o5rqp8sa3i67.apps.googleusercontent.com',
@@ -288,7 +288,15 @@ app.post('/webhook', async (req, res) => {
 
     const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
 
+    const date = new Date();
 
+    const start_date = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+
+    const formated_date = DateTime.fromJSDate(start_date, { zone: 'America/Sao_Paulo' });
+
+    const initial_date = formated_date.toISO()
+
+    // console.log(initial_date);
 
     calendar.events.list({
       calendarId: calendarId,
@@ -302,9 +310,8 @@ app.post('/webhook', async (req, res) => {
 
       const events = response.data.items;
 
-      const array = events.filter(event => event.updated)
       
-      //console.log(array)
+      //console.log(events)
 
       console.log('data de hoje',new Date())
 
@@ -445,9 +452,7 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
 
     // console.log('updated:', updated, eventName)
 
-    if (initial_date > updated && eventData.status !== 'cancelled') {
-      console.log(`Evento ${eventName} não atende ao critério de data, não será salvo nem criado.`);
-    } else if (status === 'cancelled' && eventExists) {
+    if (status === 'cancelled' && eventExists) {
       console.log('Evento cancelado, deletando a task.');
       await deleteTask(eventId);
     } else if(!eventExists && status !== 'cancelled'){
