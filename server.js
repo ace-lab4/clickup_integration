@@ -296,12 +296,13 @@ app.post('/webhook', async (req, res) => {
     
     const initial_date = formated_date.toUTC().toISO();
 
-   // console.log('data inicial do filtro:', initial_date);
+   console.log('data inicial do filtro:', initial_date);
 
     calendar.events.list({
       calendarId: calendarId,
       singleEvents: true,
       orderBy: 'updated',
+      q: '##',
       showDeleted: true,
       updatedMin: initial_date,
       auth: oAuth2Client, 
@@ -311,7 +312,7 @@ app.post('/webhook', async (req, res) => {
       const events = response.data.items;
 
       
-      console.log(events)
+     // console.log(events)
 
       const cancelledEvents = events.filter(event => event.status === 'cancelled');
 
@@ -445,11 +446,9 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     const existingTask = await checkTaskExistence(eventId);
     
 
-    console.log('updated:', updated, eventName, initial_date)
+    console.log('updated do evento:', updated, eventName, initial_date)
 
-    if( initial_date > updated && status !== 'cancelled'){
-        console.log(`Evento ${eventName} não possui data de atualização correta`)
-    } else if (status === 'cancelled' && eventExists) {
+    if (status === 'cancelled' && eventExists) {
       console.log('Evento cancelado, deletando a task.');
       await deleteTask(eventId);
     } else if(!eventExists && status !== 'cancelled'){
