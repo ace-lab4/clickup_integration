@@ -305,7 +305,6 @@ app.post('/webhook', async (req, res) => {
       q: '#cc',
       timeZone: 'America/Sao_Paulo',
       showDeleted: true,
-      updatedMin: initial_date,
       auth: oAuth2Client, 
     }, async (err, response) => {
       if (err) return console.log('Error: ' + err);
