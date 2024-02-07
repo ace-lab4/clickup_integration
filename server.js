@@ -349,11 +349,11 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
       spaceName = titleParts[1]; 
       projectId = titleParts.slice(2, 4).join(' - '); 
       listCustom = titleParts.slice(4).join(' - '); 
-    } else if (titleParts.length === 3) {
+    } else if (titleParts.length <= 3) {
       type = titleParts[0]; 
       spaceName = titleParts[1]; 
       projectId = titleParts[2]; 
-      listCustom = titleParts[3];
+      listCustom = titleParts.slice(3).join(' - '); 
     } else {
       console.error('Formato de entrada inválido.');
     }
