@@ -344,19 +344,27 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     const titleParts = event.description ? event.description.split(' - ') : [];
     let type, spaceName, projectId, listCustom;
 
-    if (titleParts.length >= 4) {
+    if (titleParts.length > 4) {
       type = titleParts[0]; 
       spaceName = titleParts[1]; 
       projectId = titleParts.slice(2, 4).join(' - '); 
       listCustom = titleParts.slice(4).join(' - '); 
-    } else if (titleParts.length <= 3) {
+      //console.log("Tipo:", type);
+      //console.log("Nome do espaço:", spaceName);
+      //console.log("ID do projeto:", projectId);
+      //console.log("Lista personalizada:", listCustom);
+    } else if (titleParts.length <= 3 || titleParts.length === 4) {
       type = titleParts[0]; 
       spaceName = titleParts[1]; 
       projectId = titleParts[2]; 
       listCustom = titleParts.slice(3).join(' - '); 
+      //console.log("Tipo:", type);
+      //console.log("Nome do espaço:", spaceName);
+      //console.log("ID do projeto:", projectId);
+     // console.log("Lista personalizada:", listCustom);
     } else {
       console.error('Formato de entrada inválido.');
-    }
+    }    
     const created = event.created;
     const status = event.status;
     const updated = event.updated;
