@@ -305,6 +305,8 @@ app.post('/webhook', async (req, res) => {
       q: '#cc',
       timeZone: 'America/Sao_Paulo',
       showDeleted: true,
+      updatedMin: initial_date,
+      showDeleted: true,
       auth: oAuth2Client, 
     }, async (err, response) => {
       if (err) return console.log('Error: ' + err);
@@ -457,7 +459,7 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
     const existingTask = await checkTaskExistence(eventId);
     
 
-    console.log('updated do evento:', updated, eventName, initial_date)
+    //console.log('updated do evento:', updated, eventName, initial_date)
 
     if (status === 'cancelled' && eventExists) {
       console.log('Evento cancelado, deletando a task.');
