@@ -488,6 +488,8 @@ async function processEvents(events, user_id_clickup, tokenClickup, email, calen
           const createdTaskId = await createTaskClickup(eventData, eventExists);
     
           console.log(`Tarefa criada para o evento ${eventId}: ${createdTaskId}, ${eventName}`);
+
+          await addTag(createdTaskId);
           
           if (createdTaskId) {
             await updateEventWithTaskId(eventId, createdTaskId, eventExists);
@@ -585,7 +587,7 @@ async function createTaskClickup(eventData, eventExists) {
 
     console.log('Created Task ID:', createdTaskId); 
     
-    await addTag(createdTaskId);
+
 
     return createdTaskId;
 
