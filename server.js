@@ -670,7 +670,7 @@ async function addTag(createdTaskId){
   const tagName = 'Integração Agenda X Clickup';
   
   const resp = await fetch(
-    `https://api.clickup.com/api/v2/task/${createdTask}/tag/${tagName}?${query}`,
+    `https://api.clickup.com/api/v2/task/${createdTask}/tag/${tagName}`,
     {
       method: 'POST',
       headers: {
