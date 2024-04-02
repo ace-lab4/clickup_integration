@@ -579,9 +579,14 @@ async function createTaskClickup(eventData, eventExists) {
     );
 
     const data = await resp.json();
-   // console.log('API Response Data:', data); // Add this line to check the entire response data
+
+   // console.log('API Response Data:', data);
     const createdTaskId = data.id;
+
     console.log('Created Task ID:', createdTaskId); 
+    
+    await addTag(createdTaskId);
+
     return createdTaskId;
 
   } catch (error) {
@@ -658,6 +663,28 @@ async function updateTaskClickup(taskId, eventData) {
     console.error(`Erro ao atualizar tarefa ${taskId}: ${error.message}`);
   }
 }
+
+// função para adicionar tag a task
+async function addTag(createdTaskId){
+  const createdTask = createdTaskId;
+  const tagName = 'Integração Agenda X Clickup';
+  
+  const resp = await fetch(
+    `https://api.clickup.com/api/v2/task/${createdTask}/tag/${tagName}?${query}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: '18926083_add53b40790275ba0e3ea1ac9ae9f250a6f07695'
+      }
+    }
+  );
+
+  if (resp.ok) {
+    console.log(`Tag adicionada comsucesso a task: ${createdTask}}`);
+  } 
+}
+
 
 // Função para buscar o id_clickup do convidado com base no email
 async function getGuestIdsFromClickUp(emails, eventData) {
